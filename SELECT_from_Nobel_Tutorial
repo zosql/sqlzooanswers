@@ -1,1 +1,7 @@
--- nobel Nobel Laureates
+--nobel Nobel Laureates
+--Winners from 1950
+/*
+1. Change the query shown so that it displays Nobel prizes for 1950.
+*/
+select yr, subject, winner from nobel
+where yr = 1950
