@@ -1,1 +1,6 @@
+--You can find the number of different values using COUNT with DISTINCT
+--1.COUNT(subject) gives 4; COUNT(DISTINCT subject) gives 3.
+
+SELECT count(subject), count(distinct(subject)) FROM nobel
+ WHERE yr=1915
 
