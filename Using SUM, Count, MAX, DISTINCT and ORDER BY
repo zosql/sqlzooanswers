@@ -1,1 +1,24 @@
+-- 1. The total population and GDP of Europe.
+
+select sum(population), sum(gdp) from bbc
+where region ='Europe'
+
+--2. What are the regions?
+
+select unique(region) from BBC
+
+--3.Show the name and population for each country with a population of more than 100000000. Show countries in descending order of population.
+
+select name, population from bbc
+where population >100000000
+Order by population desc
+
+
+
+
+
+
+
+
+
 
