@@ -13,3 +13,9 @@ group by continent
 select continent, count(name) from world
 where population >=200000000
 Group by continent
+
+--4.GROUP BY and HAVING. The HAVING clause is tested after the GROUP BY. You can test the aggregated values with a HAVING clause. Show the total population of those continents with a total population of at least half a billion.
+
+Select continent, sum(population) from world
+group by continent
+having sum(population) > 500000000
