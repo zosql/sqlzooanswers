@@ -72,3 +72,8 @@ where 25000000 >= ALL (select y.population from world y where x.continent=y.cont
 
 --Three time bigger
 --10.Some countries have populations more than three times that of all of their neighbours (in the same continent). Give the countries and continents.
+-- https://ngarciaiii.github.io/sql/2017/06/13/SELECT-Quiz/
+
+select x.name, x.continent from world x
+where x.population>ALL(select y.population*3 from world y where y.continent=x.continent and population>0 and y.name!=x.name)
+
