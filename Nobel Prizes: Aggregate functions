@@ -1,1 +1,39 @@
+--1.Show the total number of prizes awarded.
+
+select count(winner) from nobel
+
+--2.List each subject - just once
+
+select subject from nobel
+group by subject
+
+--3.Show the total number of prizes awarded for Physics.
+
+select count(subject) from nobel
+where subject = 'Physics'
+
+--4.For each subject show the subject and the number of prizes.
+
+select subject, count(winner) from nobel
+group by subject
+
+--5.For each subject show the first year that the prize was awarded.
+
+--wrong
+--select subject, yr from nobel x where yr = (select min(yr) from nobel y where x.subject=y.subject) 
+--because result
+--peace	1901
+--peace	1901
+--economics	1969
+--economics	1969
+
+select subject, yr from nobel x
+where yr = (select min(yr) from nobel y where x.subject=y.subject) 
+group by subject
+
+--6.For each subject show the number of prizes awarded in the year 2000.
+
+select subject, count(winner) from nobel
+where yr = 2000
+group by subject
 
