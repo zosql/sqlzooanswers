@@ -1,1 +1,10 @@
+--Total world population
+--1.Show the total population of the world.
+
+select sum(population) from world
+
+--List of continents
+--2.List all the continents - just once each.
+
+select distinct (continent) from world
 
