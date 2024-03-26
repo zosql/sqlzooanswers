@@ -37,3 +37,8 @@ select subject, count(winner) from nobel
 where yr = 2000
 group by subject
 
+--7. Show the number of different winners for each subject. Be aware that Frederick Sanger has won the chemistry prize twice - he should only be counted once.
+
+select subject, count(distinct(winner)) from nobel
+group by subject
+
