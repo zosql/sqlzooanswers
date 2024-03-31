@@ -83,8 +83,6 @@ Join game on matchid=id
 where team1='POL' or team2='POL'
 group by matchid
 
---wrong answer with grouping row missing
-
 --12. For every match where 'GER' scored, show matchid, match date and the number of goals scored by 'GER'
 select matchid, mdate, count(player) from game
 Join goal on matchid=id
@@ -93,6 +91,7 @@ group by matchid
 
 --13.List every match with the goals scored by each team as shown. This will use "CASE WHEN" which has not been explained in any previous exercises.
 
+--sol1:
 SELECT mdate,
 team1, Sum(CASE WHEN teamid=team1 THEN 1 ELSE 0 END) as score1,
 team2, Sum(Case When teamid=team2 then 1 Else 0 End) as score2
@@ -100,4 +99,14 @@ FROM game
 JOIN goal ON matchid = id
 group by mdate, id, team1, team2
 
---Not getting the smiley
+--Not getting the smiley with above "inner join since 0-0 score rows are not appearing"
+
+--sol2:
+select mdate, team1, 
+sum(Case When teamid=team1 Then 1 Else 0 End) as goal_count1,
+team2,
+sum(Case When teamid=team2 Then 1 Else 0 End) as goal_count2
+from game left join goal on goal.matchid=game.id
+group by mdate, matchid, team1, team2
+
+- smiley received since due to left join of game to goal now even 0-0 goal rows are appearing.
