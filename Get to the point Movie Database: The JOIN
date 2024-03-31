@@ -1,1 +1,15 @@
+--Joining two tables
+1. Join casting and actor on actorid/id
+
+SELECT * FROM casting JOIN actor
+          ON casting.actorid=actor.id
+  WHERE actor.name='John Hurt'
+
+--Joining three tables
+2. Then it makes sense to join the above table with the movie table. The obvious field to join on is the movieid field.
+
+SELECT * FROM
+   movie JOIN casting ON movie.id=movieid
+         JOIN actor   ON actorid=actor.id
+  WHERE actor.name='John Hurt'
 
