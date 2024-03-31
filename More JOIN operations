@@ -90,7 +90,7 @@ having count(title)>2
 
 --Lead actor in Julie Andrews movies
 --12.List the film title and the leading actor for all of the films 'Julie Andrews' played in.
--- BLANK
+-- Getting blank results with the following query
 
 select title, name
 from movie
@@ -100,8 +100,33 @@ where ord=1 and movieid=all(
 select movieid 
 from casting 
 join actor on casting.actorid=actor.id 
-where name='Julie Andrews'
-)
+where name='Julie Andrews')
+
+-- With 2nd revision details started appearing but not getting the smiley
+
+select title, name
+from movie
+join casting on casting.movieid=movie.id
+join actor on casting.actorid=actor.id
+where ord=1 and movieid=ALL(
+select movieid 
+from casting
+join actor on actor.id=casting.movieid  --dumb mistake here of matching id from actor table with movieid from casting table made this select statement blank
+where name= 'Julie Andrews')
+
+-- with the 3rd revision it was clear that there was an abuse of ALL instead of IN.
+-- ALL is used for comparators
+-- IN is used to send all queries from nested select without an equal sign. eg name IN (select ...)
+
+select title, name
+from movie
+join casting on movie.id=casting.movieid
+join actor on actor.id=casting.actorid
+where ord=1 and movieid IN(
+select movieid 
+from casting, actor 
+where casting.actorid=actor.id 
+and name='Julie Andrews')
 
 --Actors with 15 leading roles
 --13.Obtain a list, in alphabetical order, of actors who've had at least 15 starring roles.
@@ -126,3 +151,28 @@ where yr=1978
 group by title
 order by count(distinct(ord)) Desc, title
 
+--with 'Art Garfunkel'
+--15.List all the people who have worked with 'Art Garfunkel'.
+
+-- 1st query gave results but no smiley
+
+select distinct(name)
+from movie
+join casting on movie.id=casting.movieid
+join actor on actor.id=casting.actorid
+where movieid IN(select movieid from casting join actor on casting.actorid=actor.id where name='Art Garfunkel')
+
+-- reason detected Art Garfunkel's name appearing in the list
+
+-- 2nd query yeilding smiley
+-- discovery that the result was producing Art's name in the list of people he'd worked with
+
+-- This simple addition to the code helped fix it
+-- And name<>'Art Garfunkel'
+
+select distinct(name)
+from movie
+join casting on movie.id=casting.movieid
+join actor on actor.id=casting.actorid
+where movieid IN(select movieid from casting join actor on casting.actorid=actor.id where name='Art Garfunkel')
+And name<>'Art Garfunkel'
