@@ -1,1 +1,65 @@
+--Teachers and Departments
+--The school includes many departments. Most teachers work exclusively for a single department. Some teachers have no department.
 
+--1.List the teachers who have NULL for their department.
+
+select name from teacher
+where dept is NULL
+
+name
+Spiregrain
+Deadyawn
+
+
+--2.Note the INNER JOIN misses the teachers with no department and the departments with no teacher.
+--SELECT teacher.name, dept.name
+--FROM teacher INNER JOIN dept
+ --          ON (teacher.dept=dept.id)
+
+name	name
+Shrivell	Computing
+Throd	Computing
+Splint	Computing
+Cutflower	Design
+
+--3.Use a different JOIN so that all teachers are listed.
+
+SELECT teacher.name, dept.name
+ FROM teacher left JOIN dept
+           ON (teacher.dept=dept.id)
+
+name	name
+Shrivell	Computing
+Throd	Computing
+Splint	Computing
+Spiregrain	
+Cutflower	Design
+Deadyawn	
+
+--4.Use a different JOIN so that all departments are listed.
+-- query that misses 1 dept engg
+
+select teacher.name, dept.name 
+from dept
+join teacher on dept.id=teacher.dept
+
+name	name
+Shrivell	Computing
+Throd	Computing
+Splint	Computing
+Cutflower	Design
+
+-- query that covers engg w/o teacher
+
+select teacher.name, dept.name 
+from dept
+left join teacher on dept.id=teacher.dept
+
+name	name
+Shrivell	Computing
+Throd	Computing
+Splint	Computing
+Cutflower	Design
+Engineering
+
+--
