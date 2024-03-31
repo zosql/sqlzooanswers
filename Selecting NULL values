@@ -1,1 +1,23 @@
+--1.The SELECT statement returns results from a table. With a WHERE clause only some rows are returned.
+
+SELECT code, name FROM party
+  WHERE leader IS NOT NULL
+
+--Result:
+--code	name
+--Con	Conservative
+--Lab	Labour
+--LD	Liberal Democrat
+--SNP	Scottish National Party
+
+SELECT code, name FROM party
+  WHERE leader IS NULL
+
+--Result:
+--code	name
+--Com	Communist
+--Green	Green
+--NLP	Natural Law Party
+--SSP	Scottish Socialist Party
+--SWP	Socialist Workers Party
 
