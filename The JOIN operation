@@ -91,3 +91,13 @@ Join goal on matchid=id
 where teamid='GER'
 group by matchid
 
+--13.List every match with the goals scored by each team as shown. This will use "CASE WHEN" which has not been explained in any previous exercises.
+
+SELECT mdate,
+team1, Sum(CASE WHEN teamid=team1 THEN 1 ELSE 0 END) as score1,
+team2, Sum(Case When teamid=team2 then 1 Else 0 End) as score2
+FROM game 
+JOIN goal ON matchid = id
+group by mdate, id, team1, team2
+
+--Not getting the smiley
