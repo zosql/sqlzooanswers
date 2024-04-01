@@ -1,6 +1,10 @@
 --1.How many stops are in the database.
 
+--sol1
 select unique(count(name)) from stops
+
+--sol2
+select count(id) from stops
 
 --2.Find the id value for the stop 'Craiglockhart'
 
@@ -42,6 +46,20 @@ FROM route a
 JOIN route b ON (a.company=b.company AND a.num=b.num)
 WHERE a.stop=53 and b.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='London Road')
 
+--sol4:
+select a.company, a.num, a.stop, b.stop
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops on (stops.id=a.stop)
+where a.stop = (select id from stops where name='Craiglockhart') and b.stop =(select id from stops where name='London Road')
+
+-- b.stop gives all the places you can get to from Craiglockhart, without changing routes. 
+select a.num, a.company, a.stop, b.stop
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops on (stops.id=a.stop)
+where name = 'Craiglockhart'
+
 --6.The query shown is similar to the previous one, however by joining two copies of the stops table we can refer to stops by name rather than by number. 
 --Change the query so that the services between 'Craiglockhart' and 'London Road' are shown. 
 --If you are tired of these places try 'Fairmilehead' against 'Tollcross'
@@ -72,26 +90,141 @@ Join stops d on (b.stop=d.id)
 WHERE a.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Craiglockhart')
 and b.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='London Road')
 
+--sol4(most efficient):
+select a.company, a.num,c.name, d.name
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops c on (c.id=a.stop)
+join stops d on (d.id=b.stop)
+where c.name = 'Craiglockhart' and d.name ='London Road'
+
 --7.Give a list of all the services which connect stops 115 and 137 ('Haymarket' and 'Leith')
 
+--sol1:
 SELECT a.company,a.num
 FROM route a 
 JOIN route b ON (a.company=b.company AND a.num=b.num)
 WHERE a.stop=115 and b.stop=137
 Group by company, num
 
+--sol2:
+select a.company, a.num
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops c on (c.id=a.stop)
+join stops d on (d.id=b.stop)
+where c.name = 'Haymarket' and d.name ='Leith'
+group by company, num
+
 --8.Give a list of the services which connect the stops 'Craiglockhart' and 'Tollcross'
 
+--sol1:
 SELECT a.company,a.num
 FROM route a 
 JOIN route b ON (a.company=b.company AND a.num=b.num)
 WHERE a.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Craiglockhart') and b.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Tollcross')
 Group by company, num
 
+--sol2:
+select a.company, a.num
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops c on (c.id=a.stop)
+join stops d on (d.id=b.stop)
+where c.name = 'Craiglockhart' and d.name ='Tollcross'
+group by company, num
+
 --9.Give a distinct list of the stops which may be reached from 'Craiglockhart' by taking one bus, including 'Craiglockhart' itself, offered by the LRT company. Include the company and bus no. of the relevant services.
 
+--sol1:
 select name,a.company, a.num
 from route a
 join route b on (a.company=b.company and a.num=b.num)
 join stops on b.stop=id
 where a.company='LRT' and a.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Craiglockhart')
+
+--Sol2:
+select distinct(name), a.company, a.num
+from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops on (stops.id=a.stop)
+where b.stop = (select id from stops where name='Craiglockhart') and b.company='LRT'
+group by name, company, num
+order by num
+
+--10. Find the routes involving two buses that can go from Craiglockhart to Lochend.
+--Show the bus no. and company for the first bus, the name of the stop for the transfer, and the bus no. and company for the second bus.
+
+-- Practice code written in anticipation of result
+-- SELECT a.company, a.num, a.stop, b.stop 
+-- FROM route a 
+-- JOIN route b ON (a.company=b.company AND a.num=b.num)
+-- WHERE a.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Craiglockhart') and b.stop=(select distinct(id) from stops join route on route.stop=stops.id where name='Lochend')
+
+-- The above query shows that there are no direct routes btw CH and LC
+-- But there could be some common stops on the route starting in CH and ending in LC
+-- If I self-join the route table I can get the stops starting CH
+
+-- select a.num, a.company, d.name, c.num, c.company
+-- from route a
+-- join route b on (a.company=b.company and a.num=b.num)
+-- join route c on (c.company=b.company and c.num=b.num)
+-- join stops d on d.id=c.stop
+-- where b.stop=(select distinct(id) from stops join route on b.stop=d.id where name='Craiglockhart') and c.stop=(select distinct(id) from stops join route on c.stop=d.id where name='Lochend')
+
+-- select S.num, S.company, S.name, T.num, T.company
+-- From( select a.num, a.company from route a join stops on a.stop=id where a.stop IN (select distinct(id) from stops join route on route.stop=stops.id where name='Craiglockhart')) S
+-- Join (select b.num, b.company from route b join stops on b.stop=id where b.stop IN (select distinct(id) from stops join route on route.stop=stops.id where name='Lochend')) T
+-- On (S.name=T.name)
+
+-- Default two stops code shows blank entries meaning there are no routes connecting these two stops directly
+-- select a.company, a.num,c.name, d.name from route a
+-- join route b on (a.company=b.company and a.num=b.num)
+-- join stops c on (c.id=a.stop)
+-- join stops d on (d.id=b.stop)
+-- where c.name = 'Craiglockhart' and d.name ='London Road'
+
+-- Cannot join using stop because we do not have to find pairs of company <> num sharing stops.
+-- We could find all the stops originating from Craiglockhart and those from Lochend and find commonalities.
+
+select distinct CLR.num, CLR.company, CLR.CL As name, LCR.num, LCR.company
+
+from
+(select a.num, a.company, d.name AS CL from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops c on (c.id=a.stop)
+join stops d on (d.id=b.stop)
+where c.name='Craiglockhart') AS CLR
+
+Join
+
+(select e.num, e.company, h.name AS LC from route e
+join route f on (e.company=f.company and e.num=f.num)
+join stops g on (g.id=e.stop)
+join stops h on (h.id=f.stop)
+where g.name='Lochend') AS LCR
+
+on CLR.CL=LCR.LC
+
+-- but the above query did not pop the smiley
+-- upon noticing that the order of the rows is different I wrote an order by line for all the table parameters
+select distinct CLR.num, CLR.company, CLR.CL As name, LCR.num, LCR.company
+from
+(select a.num, a.company, d.name AS CL from route a
+join route b on (a.company=b.company and a.num=b.num)
+join stops c on (c.id=a.stop)
+join stops d on (d.id=b.stop)
+where c.name='Craiglockhart') AS CLR
+
+Join
+
+(select e.num, e.company, h.name AS LC from route e
+join route f on (e.company=f.company and e.num=f.num)
+join stops g on (g.id=e.stop)
+join stops h on (h.id=f.stop)
+where g.name='Lochend') AS LCR
+
+on CLR.CL=LCR.LC
+order by CLR.num, CLR.company, CLR.CL, LCR.num, LCR.company
+
+-- SMILEY POPPED
