@@ -208,6 +208,7 @@ on CLR.CL=LCR.LC
 
 -- but the above query did not pop the smiley
 -- upon noticing that the order of the rows is different I wrote an order by line for all the table parameters
+
 select distinct CLR.num, CLR.company, CLR.CL As name, LCR.num, LCR.company
 from
 (select a.num, a.company, d.name AS CL from route a
