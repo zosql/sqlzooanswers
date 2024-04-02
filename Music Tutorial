@@ -61,7 +61,7 @@ having count(distinct album) > 2
 
 -- 9.A "good value" album is one where the price per track is less than 50 pence. Find the good value album - show the title, the price and the number of tracks.
 
--- sol1: didn't get smiley
+-- sol1: didn't get smiley, but all the rows match but in a different order
 select title, price, count(song)
 from album join track on asin=track.album
 group by track.album
