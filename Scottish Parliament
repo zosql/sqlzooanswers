@@ -21,3 +21,20 @@ from party join msp on msp.party=party.code
 group by party.name
 having count(msp.name)>0
 
+-- 5.Obtain a list of all MSPs by name, give the name of the MSP and the name of the party where available. Be sure that Canavan MSP, Dennis is in the list. Use ORDER BY msp.name to sort your output by MSP.
+
+select msp.name, party.name
+from party right join msp on msp.party=party.code
+ORDER BY msp.name
+
+-- 6.Obtain a list of parties which have MSPs, include the number of MSPs.
+
+select party.name, count(msp.name)
+from party join msp on msp.party=party.code
+group by party.name
+
+-- 7.A list of parties with the number of MSPs; include parties with no MSPs.
+
+select party.name, count(msp.name)
+from party left join msp on msp.party=party.code
+group by party.name
