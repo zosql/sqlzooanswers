@@ -1,0 +1,23 @@
+-- 1.One MSP was kicked out of the Labour party and has no party. Find him.
+
+select Name from msp
+where party is NULL
+
+-- 2.Obtain a list of all parties and leaders.
+
+select Name, Leader
+from party 
+
+-- 3.Give the party and the leader for the parties which have leaders.
+
+select Name, Leader
+from party 
+Where Leader is not null
+
+-- 4.Obtain a list of all parties which have at least one MSP.
+
+Select party.Name
+from party join msp on msp.party=party.code
+group by party.name
+having count(msp.name)>0
+
