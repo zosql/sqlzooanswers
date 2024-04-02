@@ -1,0 +1,107 @@
+-- 1.The example shows the number who responded for:
+-- question 1
+-- at 'Edinburgh Napier University'
+-- studying '(8) Computer Science'
+-- Show the the percentage who STRONGLY AGREE
+
+-- sol1: this gives the smiley however it's not the right answer.
+SELECT A_STRONGLY_AGREE
+  FROM nss
+ WHERE question='Q01'
+   AND institution='Edinburgh Napier University'
+   AND subject='(8) Computer Science'
+
+-- sol2:this query qctually gives the percentage
+select round(sum(response*A_strongly_agree/100)/sum(response)*100)
+from nss
+ WHERE question='Q01'
+   AND subject='(8) Computer Science'
+AND institution='Edinburgh Napier University'
+
+-- HINT from Q5
+-- The A_STRONGLY_AGREE column is a percentage. 
+-- To work out the total number of students who strongly agree you must multiply this number by the number who responded (response) and divide by 100.
+-- Take the SUM of that.
+
+
+-- 2.Show the institution and subject where the score is at least 100 for question 15.
+
+SELECT institution, subject
+  FROM nss
+ WHERE question='Q15'
+   AND score>99
+
+-- Unhappy Computer Students
+-- 3.Show the institution and score where the score for '(8) Computer Science' is less than 50 for question 'Q15'
+
+SELECT institution,score
+  FROM nss
+ WHERE question='Q15'
+   AND score<50
+   AND subject='(8) Computer Science'
+
+-- More Computing or Creative Students?
+-- 4.Show the subject and total number of students who responded to question 22 for each of the subjects '(8) Computer Science' and '(H) Creative Arts and Design'.
+
+SELECT subject,sum(response)
+  FROM nss
+ WHERE question='Q22'
+   AND subject IN ('(8) Computer Science', '(H) Creative Arts and Design')
+group by subject
+
+-- Strongly Agree Numbers
+-- 5.Show the subject and total number of students who A_STRONGLY_AGREE to question 22 for each of the subjects '(8) Computer Science' and '(H) Creative Arts and Design'.
+
+SELECT subject, sum(A_STRONGLY_AGREE*response/100)
+  FROM nss
+ WHERE question='Q22'
+   AND subject IN ('(8) Computer Science', '(H) Creative Arts and Design')
+group by subject
+
+-- Strongly Agree, Percentage
+-- 6.Show the percentage of students who A_STRONGLY_AGREE to question 22 for the subject '(8) Computer Science' show the same figure for the subject '(H) Creative Arts and Design'.
+-- Use the ROUND function to show the percentage without decimal places.
+
+SELECT subject, round(sum(response*A_strongly_agree/100)/sum(response)*100)
+  FROM nss
+ WHERE question='Q22'
+   AND subject IN ('(8) Computer Science', '(H) Creative Arts and Design')
+group by subject
+
+-- Scores for Institutions in Manchester
+-- 7. Show the average scores for question 'Q22' for each institution that include 'Manchester' in the name.
+-- The column score is a percentage - you must use the method outlined above to multiply the percentage by the response and divide by the total response. Give your answer rounded to the nearest whole number.
+
+SELECT institution, round(sum(response*score/100)/sum(response)*100)
+  FROM nss
+ WHERE question='Q22'
+   AND (institution LIKE '%Manchester%')
+Group BY institution
+ORDER BY institution
+
+-- Number of Computing Students in Manchester
+-- 8.Show the institution, the total sample size and the number of computing students for institutions in Manchester for 'Q01'.
+
+-- operating on the assumption that "computing student" means someone from computer science subject
+-- other assumptions, sample is the maximum possible number of responses that could be obtained on any Q, out of which response is what is received
+-- Tried sum and count of "sample" when subject is CS but getting 3388 or 1 as responses
+-- Additionally the where conditions are not getting applied on this 3rd CS only sample
+-- Changing strategy to what I found online to use case when then end which ideally adds columns in the "select" statement
+
+-- part solution 
+Select institution, sum(sample), (case when subject='(8) Computer Science' then sample else 0 end) Count
+from nss 
+where institution LIKE '%Manchester%' and question='Q01'
+group by institution
+
+-- the above code gave 46 for as one of the values of the last column but other two remained zero
+-- thnking that sum(sample) should be written instead of sample alone.
+-- but sample sample gave entire sample size of 537 for this same entry and others remained zero
+
+-- query found online
+SELECT institution, sum(sample), sum(case when subject='(8) Computer Science' then sample else 0 end) as comp
+  FROM nss
+ WHERE question='Q01' AND institution LIKE '%Manchester%'
+group by institution
+
+-- this means that to add a column which can be affected by where conditions but  has it's own special condition use case when then end
