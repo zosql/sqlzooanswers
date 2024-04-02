@@ -6,6 +6,10 @@ select unique(count(name)) from stops
 --sol2
 select count(id) from stops
 
+--sol3
+select count(*) from stops
+
+
 --2.Find the id value for the stop 'Craiglockhart'
 
 select id from stops
