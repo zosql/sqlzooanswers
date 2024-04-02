@@ -1,0 +1,42 @@
+-- 1.Find the title and artist who recorded the song 'Alison'.
+
+select title, artist from album
+join track on asin=track.album
+where song ='Alison'
+
+-- 2.Which artist recorded the song 'Exodus'?
+
+select artist 
+from album join track on asin=track.album
+where song = 'Exodus'
+
+-- 3.Show the song for each track on the album 'Blur'
+
+select song
+from track join album on asin=track.album
+where title='Blur'
+
+-- 4.For each album show the title and the total number of track.
+
+select title, count(song)
+from album join track on asin=track.album
+group by title
+
+-- 5.For each album show the title and the total number of tracks containing the word 'Heart' (albums with no such tracks need not be shown).
+
+select title, count(song)
+from album join track on asin=track.album
+where song LIKE "%Heart%"
+group by title
+
+--6.A "title track" is where the song is the same as the title. Find the title tracks.
+
+select song
+from album join track on asin=track.album
+where title = song
+
+--7.An "eponymous" album is one where the title is the same as the artist (for example the album 'Blur' by the band 'Blur'). Show the eponymous albums.
+
+select title
+from album 
+where title=artist
