@@ -1,0 +1,15 @@
+-- 1.All MSPs and parties, including parties with no MSPs, but not MSPs with no parties.
+
+-- if right join then right tabel values survive and are sought in the table on the left
+-- if left join then left table values survive and are sought in the table on the right
+-- here we don't want to display msps without parties
+-- hence we need to preserve the party table and join msps to it
+
+-- where two tables msp and party
+-- we want to preserve all values from party table and use right join
+-- hence we will mention the table party on the right side of the join code saying: msp right join party on party.code=msp.party
+
+SELECT msp.name, party.name
+  FROM msp right JOIN party ON msp.party=party.code
+
+-- right join and left join are outer joins each preserving all the values of the table on the direction it is calling out
