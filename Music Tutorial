@@ -59,6 +59,14 @@ from track
 group by song
 having count(distinct album) > 2
 
+-- 9.A "good value" album is one where the price per track is less than 50 pence. Find the good value album - show the title, the price and the number of tracks.
+
+-- sol1: didn't get smiley
+select title, price, count(song)
+from album join track on asin=track.album
+group by track.album
+Having price/count(track.album)<0.5
+
 -- 10.Wagner's Ring cycle has an imposing 173 tracks, Bing Crosby clocks up 101 tracks.
 -- List albums so that the album with the most tracks is first. Show the title and the number of tracks
 -- Where two or more albums have the same number of tracks you should order alphabetically
