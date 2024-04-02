@@ -40,3 +40,41 @@ where title = song
 select title
 from album 
 where title=artist
+
+-- 8.Find the songs that appear on more than 2 albums. Include a count of the number of times each shows up.
+
+--sol1:
+-- got the exact answer as expected with below code but not get the smiley
+
+select song, count(distinct album.title)
+from album inner join track on asin=track.album
+group by song
+having count(distinct album.title)>2
+
+--sol2:
+-- got the smiley with this code
+
+select song, count(distinct album)
+from track
+group by song
+having count(distinct album) > 2
+
+-- 10.Wagner's Ring cycle has an imposing 173 tracks, Bing Crosby clocks up 101 tracks.
+-- List albums so that the album with the most tracks is first. Show the title and the number of tracks
+-- Where two or more albums have the same number of tracks you should order alphabetically
+
+-- sol1: this query gives all the right rows except for the album title - The Greatest Hits
+-- my code seems to be adding two The Greatest Hits songs together and showing it as one entry but their data shows it as two entries.
+-- it's because of the group by title function
+
+select title, count(track.album)
+from album join track on asin=track.album
+group by title 
+order by count(track.album) Desc, title Asc
+
+-- sol2: I got a SMILEY boooyaaaah!
+
+select title, count(track.album)
+from album join track on asin=track.album
+group by track.album
+order by count(track.album) Desc, title Asc
