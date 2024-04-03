@@ -1,3 +1,10 @@
+-- This exercise jumps into windows functions without any introduction
+-- This site helped learn more about windows functions: https://www.geeksforgeeks.org/window-functions-in-sql/
+-- Aggregate functions like avg(), sum(), rank(), dense_rank(), row_number(), etc, followed by over() and name of the column within brackets.
+-- Window functions apply to aggregate and ranking functions over a particular window (set of rows) -- a "partition" so to speak!
+-- so after the clauses windows_function () over (partition by )
+-- For ranking functions add order by within the partition by clause but for aggregate functions beware of adding order by within partition by!
+
 -- Warming up
 -- 1.Show the lastName, party and votes for the constituency 'S14000024' in 2017.
 
