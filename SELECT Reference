@@ -26,3 +26,18 @@ continent: Europe
 -- 2
 -- INSERT .. SELECT-- query didn't run!
 
+-- 3 Get a list of all the tables
+Show tables
+
+-- 4 Get a list of the data type in columns in a table
+Show columns from table
+Describe table
+
+-- 5 Get first 10 rows in the query result
+Select * from table 
+LIMIT 10
+
+-- 5 Get 10 to 20 rows in the query result
+Select * from table 
+Order by column Desc
+LIMIT 10, 20
