@@ -4,3 +4,71 @@
 SELECT concat(SPR_FNM1, " ",SPR_SURN)
   FROM INS_SPR
   WHERE SPR_CODE='50200100'
+
+-- Result:
+concat(SPR_FN..
+Tom Cotton
+
+-- Find the modules studied by a student
+-- 2.Show the module code and module name for modules studied by the student with number 50200100 in session 2016/7 TR1
+
+SELECT INS_MOD.MOD_CODE, MOD_NAME
+FROM INS_MOD
+JOIN CAM_SMO ON INS_MOD.MOD_CODE=CAM_SMO.MOD_CODE
+-- JOIN INS_SPR ON INS_SPR.SPR_CODE=CAM_SMO.SPR_CODE
+WHERE AYR_CODE='2016/7' AND PSL_CODE='TR1' AND CAM_SMO.SPR_CODE='50200100'
+
+-- Result:
+MOD_CODE	MOD_NAME
+CSN08101	Systems and Services
+INF08104	Database Systems
+SET08108	Software Development 2
+
+-- Find the modules and module leader studied by a student
+-- 3. Show the module code and module name and details of the module leader for modules studied by the student with number 50200100 in session 2016/7 TR1
+
+SELECT INS_MOD.MOD_CODE, MOD_NAME, INS_MOD.PRS_CODE,PRS_FNM1, PRS_SURN
+FROM INS_MOD
+JOIN CAM_SMO ON INS_MOD.MOD_CODE=CAM_SMO.MOD_CODE
+JOIN INS_PRS ON INS_MOD.PRS_CODE=INS_PRS.PRS_CODE
+-- JOIN INS_SPR ON INS_SPR.SPR_CODE=CAM_SMO.SPR_CODE
+WHERE AYR_CODE='2016/7' AND PSL_CODE='TR1' AND CAM_SMO.SPR_CODE='50200100'
+
+-- Result:
+MOD_CODE	MOD_NAME	PRS_CODE	PRS_FNM1	PRS_SURN
+CSN08101	Systems and Services	40000008	James	Jackson
+INF08104	Database Systems	40000036	Andrew	Cumming
+SET08108	Software Development 2	40000408	Neil	Urquhart
+
+-- Show the scores for module SET08108
+-- 4.Show the Percentage of students who gave 4 or 5 to module SET08108 in session 2016/7 TR1
+
+SELECT 
+MOD_CODE, AYR_CODE, PSL_CODE,CONCAT(ROUND(((SELECT COUNT(RES_VALU) AS TOP_RAT FROM INS_RES
+WHERE AYR_CODE='2016/7' AND PSL_CODE='TR1' AND MOD_CODE='SET08108' AND RES_VALU BETWEEN 4 AND 5)
+/
+(SELECT COUNT(RES_VALU) AS ALL_RAT FROM INS_RES
+WHERE AYR_CODE='2016/7' AND PSL_CODE='TR1' AND MOD_CODE='SET08108')*100),2),"%") PRCNT
+
+FROM INS_RES
+WHERE MOD_CODE='SET08108'
+GROUP BY MOD_CODE
+
+Result:
+MOD_CODE	AYR_CODE	PSL_CODE	PRCNT
+SET08108	2016/7	TR1	81.72%
+
+-- Show the frequency chart for module SET08108 for question 4.1
+-- 5.For each response 1-5 show the number of students who gave that response (Module SET08108, 2016/7, TR1)
+
+SELECT RES_VALU,  COUNT(SPR_CODE) STU_NUM, MOD_CODE, AYR_CODE, QUE_CODE, PSL_CODE
+FROM INS_RES
+WHERE AYR_CODE='2016/7' AND PSL_CODE='TR1' AND MOD_CODE='SET08108' AND QUE_CODE='4.1'
+GROUP BY MOD_CODE, RES_VALU
+ORDER BY STU_NUM DESC
+
+-- Result:
+RES_VALU	STU_NUM	MOD_CODE	AYR_CODE	QUE_CODE	PSL_CODE
+5	39	SET08108	2016/7	4.1	TR1
+4	10	SET08108	2016/7	4.1	TR1
+2	6	SET08108	2016/7	4.1	TR1
