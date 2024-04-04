@@ -1,0 +1,24 @@
+-- https://sqlzoo.net/wiki/SELECT_Reference
+
+-- 1 
+-- UNION
+
+Select concat("Population: ",population) As Germany from world
+where name = 'Germany'
+UNION
+Select concat("GDP: ",gdp) from world
+where name = 'Germany'
+UNION
+Select concat("area: ", area ) from world
+where name = 'Germany'
+UNION
+Select concat("continent: ", continent) from world
+where name = 'Germany'
+
+-- Result:
+Germany
+Population: 84432670
+GDP: 4308854000000
+area: 348672
+continent: Europe
+
