@@ -87,12 +87,13 @@ ORDER BY population DESC
 
 -- sol1: gives only one row as output but no SMILEY and no expected solution!
 
-select Country, Date
+select Country, Date, Day_Count
 
 from
 (SELECT name as Country, DATE_FORMAT(whn,'%Y-%m-%d') Date, confirmed-Lag(confirmed, 1) over(partition by name order by whn) Day_Count
  FROM covid
-WHERE YEAR(whn) = 2020) New
+where Year(whn)=2020
+) New
 
 where Day_Count>=1000 
 and Day_Count>=All
@@ -101,15 +102,40 @@ and Day_Count>=All
 from 
 (SELECT name as Country, DATE_FORMAT(whn,'%Y-%m-%d') Date, confirmed-Lag(confirmed, 1) over(partition by name order by whn) Day_Count
  FROM covid
-WHERE YEAR(whn) = 2020) New
+where Year(whn)=2020
+) New
 where Day_Count>0)
 
-group by Country, Date
--- group by Country
+Group by Country
+-- group by Country, Date
 -- no grouping statement
 
 -- Result:
--- Country	Date
--- Turkey	2020-12-10
+-- Country	Date	Day_Count
+-- Turkey	2020-12-10	823225
 
 -- Getting error constantly: Lost connection to MySQL server during query
+
+-- sol2: CLEANER SOLUTION BY ME: Gives results but no SMILEY!
+-- key assumption of taking Monday or weekday(whn)=0 only data since the query fails when run over the entire data set
+-- logic used was the break the problem into smaller executable bits
+-- first was the find the day's count via lag formula
+-- then using this proxy table i ranked those day_counts
+-- then using this as the proxy table i selected rows where rank = 1 and Day_Count >=1000
+
+select Day_Count, Date, name
+
+from
+(
+select name, Date, Day_Count, rank() over(partition by name order by Day_Count Desc) Rank
+
+from
+(
+select name, date_format(whn,'%Y-%m-%d') as Date, confirmed-Lag(confirmed,1) over(partition by name order by whn) as Day_Count
+from covid
+where weekday(whn)=0
+) Novo
+) Novo2
+
+where Rank=1 and Day_Count>=1000
+Order by Day_Count Desc
