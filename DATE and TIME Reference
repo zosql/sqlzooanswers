@@ -1,1 +1,105 @@
+-- Specify a date
+-- 1.The Standard specifies a date literal as: DATE '1982-05-20'
+-- Similarly specify a timestamp using TIMESTAMP '1982-05-20 21:30:00'
+-- Find the songs played on 20th May 1982.
 
+SELECT * FROM totp
+ WHERE wk = DATE '1982-05-20'
+
+-- Match a range of dates
+-- 2.The BETWEEN clause may be used with dates, numbers and strings
+
+SELECT *FROM totp
+where wk between '1980-04-01' and '2020-04-01'
+
+-- 3.We want to know how long has it been since Tom Jones featured on TOTP.
+
+SELECT singer, max(2024-04-01-Date_Format(wk,'%Y-%m-%d')) Years FROM totp
+where singer ='Tom Jones'
+group by singer 
+order by Years Desc
+
+-- INTERVAL of time
+-- 4.We can add (or subtract) a number of days (or years, months, hours, minutes or seconds) from date.
+-- In this example we want to find the totp events that went out in the week of my birthday.
+
+-- SECOND (4 days)
+SELECT * FROM totp
+WHERE DATE '1992-05-30'
+ BETWEEN wk - INTERVAL '345600' Second
+     AND wk + INTERVAL '345600' Second
+
+-- Result:
+wk	singer	song
+Thu, 28 May 1992 00:00:00 GMT	Cure	Friday Im In Love
+Thu, 28 May 1992 00:00:00 GMT	Lisa Stansfield	Set Your Loving Free
+
+-- HOUR (could be MINUTE, Year, Month)
+SELECT * FROM totp
+WHERE DATE '1992-05-30'
+ BETWEEN wk - INTERVAL '100' HOUR
+     AND wk + INTERVAL '100' HOUR
+
+-- Date functions
+-- Group by day of the week (using date functions)
+-- 5.We might want to count, or find the average by days of the week. This approach uses the date functions.
+-- In this example we note that top of the pops usually goes out on a Thursday or Friday.
+
+SELECT DAYOFWEEK(wk), COUNT(song)
+  FROM totp
+ GROUP BY DAYOFWEEK(wk)
+
+-- Date arithmetics
+-- Group by day of the week (using arithmetic).
+-- 6.We can use modular arithmetic to calculate the day of the week.
+-- We happen to know that 20 May 1962 was a Sunday. We calculate the number of days from that day and take mod 7 value. This tells us the day of the week: 0 is Sunday, 1 is Monday...
+
+select *, dayofweek(wk) from totp
+
+-- Result:
+wk	singer	song	dayofweek(wk)
+Wed, 27 Nov 1974 00:00:00 GMT	David Essex	Gonna Make You A Star	4
+Wed, 27 Nov 1974 00:00:00 GMT	Gary Glitter	Oh Yes Youre Beautiful	4
+
+-- Result tells us that Wed is 4th dotw hence Sunday is 0.
+
+-- Select the oldest TOTP entry
+-- 7.How can I select the oldest TOTP Singers in the table by date of release?
+
+select singer from 
+where wk=
+select min(wk) from totp
+
+-- Select a record with the latest date
+-- 8.There may be several records with the same date.
+-- There are two steps...
+-- (a) Find the latest date
+-- (b) Select records with that date
+-- With a nested select we can do both of these in one go.
+
+select singer, wk from totp
+where wk=
+(select MAX(wk) from totp)
+
+-- Result:
+singer	wk
+Janet Jackson	Fri, 04 Aug 2000 00:00:00 GMT
+Moloko	Fri, 04 Aug 2000 00:00:00 GMT
+Santana	Fri, 04 Aug 2000 00:00:00 GMT
+
+-- YYYYMMDD date format
+-- How to format a date in the like yyyymmdd.
+-- 9. Display the dates that Madness played Top of the Pops, show the dates in the format yyyymmdd.
+
+select singer, wk, date_format(wk,'%Y%m%d') from totp
+where singer = 'Madness'
+
+-- Result:
+singer	wk	date_format(w..
+Madness	Thu, 06 Sep 1979 00:00:00 GMT	19790906
+Madness	Thu, 20 Sep 1979 00:00:00 GMT	19790920
+Madness	Thu, 08 Nov 1979 00:00:00 GMT	19791108
+Madness	Thu, 22 Nov 1979 00:00:00 GMT	19791122
+Madness	Thu, 03 Jan 1980 00:00:00 GMT	19800103
+Madness	Thu, 17 Jan 1980 00:00:00 GMT	19800117
+Madness	Thu, 31 Jan 1980 00:00:00 GMT	19800131
