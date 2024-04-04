@@ -22,3 +22,7 @@ GDP: 4308854000000
 area: 348672
 continent: Europe
 
+
+-- 2
+-- INSERT .. SELECT-- query didn't run!
+
