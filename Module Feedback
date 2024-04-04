@@ -1,1 +1,6 @@
+-- Find the student name from a matriculation number
+-- 1.Find the name of the student with number 50200100
 
+SELECT concat(SPR_FNM1, " ",SPR_SURN)
+  FROM INS_SPR
+  WHERE SPR_CODE='50200100'
