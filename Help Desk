@@ -78,3 +78,164 @@ where Level.Level_code between 4 and 7 and Manager is not null
 Select Date_Format(Shift_date,'%Y-%m-%d') as Shift_date, Shift_type, First_name, Last_name from Shift
 Join Staff on Staff.Staff_code=Shift.Manager
 Order by Shift_date
+
+-- Medium
+-- 6.List the Company name and the number of calls for those companies with more than 18 calls.
+
+-- Result:
++------------------+----+
+| Company_name     | cc |
++------------------+----+
+| Gimmick Inc.     | 22 |
+| Hamming Services | 19 |
+| High and Co.     | 20 |
++------------------+----+
+
+select Company_name, count(call_ref) as cc
+from Customer
+join Caller on Customer.Company_ref=Caller.Company_ref
+join Issue on Caller.Caller_id=Issue.caller_id
+group by Company_name
+Having count(call_ref)>18
+
+-- 7.Find the callers who have never made a call. Show first name and last name
+
+-- Result
++------------+-----------+
+| first_name | last_name |
++------------+-----------+
+| David      | Jackson   |
+| Ethan      | Phillips  |
++------------+-----------+
+
+-- 8.For each customer show: Company name, contact name, number of calls where the number of calls is fewer than 5
+
+-- My Result:
+Company_name	First_name	Last_Name	nc
+Pitiable Shipping	Chloe	Walker	4
+Rajab Group	Emily	Cooper	4
+Somebody Logistics	Elizabeth	Baker	2
+
+-- Default Result:
++--------------------+------------+-----------+----+
+| Company_name       | first_name | last_name | nc |
++--------------------+------------+-----------+----+
+| Pitiable Shipping  | Ethan      | McConnell |  4 |
+| Rajab Group        | Emily      | Cooper    |  4 |
+| Somebody Logistics | Ethan      | Phillips  |  2 |
++--------------------+------------+-----------+----+
+
+-- Following query A shows result A: 
+select Company_name, First_name, Last_Name, Issue.Call_Ref from Caller
+left join Customer on Customer.Company_ref=Caller.Company_ref
+left join Issue on Caller.Caller_id=Issue.caller_id
+where Company_name LIKE "Piti%" or Company_name LIKE "Some%" or Company_name LIKE "Rajab%"
+Order by Customer.Company_Ref
+
+-- Result A:
+Company_name	First_name	Last_Name	Call_Ref
+Somebody Logistics	Elizabeth	Baker	1469
+Somebody Logistics	Elizabeth	Baker	1611
+Somebody Logistics	Ethan	Phillips	
+Pitiable Shipping	Chloe	Walker	1256
+Pitiable Shipping	Chloe	Walker	1392
+Pitiable Shipping	Ethan	McConnell	1262
+Pitiable Shipping	Ethan	McConnell	1398
+Rajab Group	Emily	Cooper	1240
+Rajab Group	Emily	Cooper	1539
+Rajab Group	Christopher	Edwards	1470
+Rajab Group	Christopher	Edwards	1612
+
+-- It shows that pitiable shipping has 4 tickets and Chloe Walker also has raised 2/4 tickets
+-- Rajab Group also has 4 tickets and Christopher also raised 2/4 tickets besides Emily
+-- Somebody logistics has 2 tickets and both raised by Elizabeth Baker
+-- This means that the result shown by SQLZoo to be correct is not true.
+
+-- Query B shows the closest possible result to the one required
+select Company_name,first_name, last_name, count(Call_ref) nc from Caller
+left join Customer on Customer.Company_ref=Caller.Company_ref
+left join Issue on Caller.Caller_id=Issue.caller_id
+Group by Company_name
+order by Company_name Desc, NC
+
+-- Result B:
+Company_name	First_name	Last_Name	nc
+Pitiable Shipping	Chloe	Walker	4
+Rajab Group	Emily	Cooper	4
+Somebody Logistics	Elizabeth	Baker	2
+
+-- 9.For each shift show the number of staff assigned. Beware that some roles may be NULL and that the same person might have been assigned to multiple roles (The roles are 'Manager', 'Operator', 'Engineer1', 'Engineer2').
+
+-- Result:
++------------+------------+----+
+| Shift_date | Shift_type | cw |
++------------+------------+----+
+| 2017-08-12 | Early      |  4 |
+| 2017-08-12 | Late       |  4 |
+| 2017-08-13 | Early      |  3 |
+| 2017-08-13 | Late       |  2 |
+| 2017-08-14 | Early      |  4 |
+| 2017-08-14 | Late       |  4 |
+| 2017-08-15 | Early      |  4 |
+| 2017-08-15 | Late       |  4 |
+| 2017-08-16 | Early      |  4 |
+| 2017-08-16 | Late       |  4 |
++------------+------------+----+
+
+-- Query A
+
+select date_format(shift_date,'%Y-%m-%d') Shift_date, shift_type from Shift
+order by shift_date, shift_type
+
+-- Result A
+
+Shift_date	shift_type
+2017-08-12	Early
+2017-08-12	Late
+2017-08-13	Early
+2017-08-13	Late
+2017-08-14	Early
+2017-08-14	Late
+2017-08-15	Early
+2017-08-15	Late
+2017-08-16	Early
+2017-08-16	Late
+
+-- Since across columns counting unique values is tedious, a simple hack is to unionize and create a new table where all values appear in the same name column
+-- then count the distinct values for each new table entry
+-- this accounts for null entries if any and duplicates across columns
+
+-- Query B
+
+select date_format(shift_date,'%Y-%m-%d') as Shift_date, Shift_type, count(Distinct(role)) cw from
+(
+SELECT shift_date,shift_type,Manager AS role FROM Shift
+Union
+SELECT shift_date,shift_type,Operator AS role FROM Shift
+Union
+SELECT shift_date,shift_type,Engineer1 AS role FROM Shift
+Union
+SELECT shift_date,shift_type,Engineer2 AS role FROM Shift
+) Novo
+Group by shift_date, shift_type
+
+-- 10.Caller 'Harry' claims that the operator who took his most recent call was abusive and insulting. Find out who took the call (full name) and when.
+
+-- Result:
++------------+-----------+---------------------+
+| first_name | last_name | call_date           |
++------------+-----------+---------------------+
+| Emily      | Best      | 2017-08-16 10:25:00 |
++------------+-----------+---------------------+
+
+-- Query:
+
+Select First_name, last_name, call_date 
+From
+(select Staff.First_name, Staff.last_name, date_format(Issue.call_date,'%Y-%m-%d %T') as call_date, rank() over(order by Issue.call_date Desc) Rank 
+from Staff
+join Issue on Staff.staff_code=Issue.Taken_by
+join Caller on Caller.caller_id=Issue.caller_id
+where Caller.First_name='Harry') Ranked
+
+where Rank=1
