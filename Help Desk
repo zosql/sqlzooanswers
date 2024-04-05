@@ -29,3 +29,52 @@ where call_date LIKE '2017-08-14%' and first_name='Samantha' and last_name='Hall
 | 2017-08-14 18:18:00 | Samantha   | Hall      |
 +---------------------+------------+-----------+
 
+-- 3.There are 500 calls in the system (roughly). Write a query that shows the number that have each status.
+
+-- Result:
++--------+--------+
+| status | Volume |
++--------+--------+
+| Closed |    486 |
+| Open   |     10 |
++--------+--------+
+
+Select Status, count(caller_id) As Volume from Issue
+Group by status
+
+-- 4.Calls are not normally assigned to a manager but it does happen. How many calls have been assigned to staff who are at Manager Level?
+
+-- Result:
++------+
+| mlcc |
++------+
+|   51 |
++------+
+
+select count(*) as mlcc 
+from Issue
+join Staff on Staff.Staff_code=Issue.assigned_to
+join Level on Level.Level_code=Staff.Level_code
+where Level.Level_code between 4 and 7 and Manager is not null
+
+-- 5.Show the manager for each shift. Your output should include the shift date and type; also the first and last name of the manager.
+
+-- Result:
++------------+------------+------------+-----------+
+| Shift_date | Shift_type | first_name | last_name |
++------------+------------+------------+-----------+
+| 2017-08-12 | Early      | Logan      | Butler    |
+| 2017-08-12 | Late       | Ava        | Ellis     |
+| 2017-08-13 | Early      | Ava        | Ellis     |
+| 2017-08-13 | Late       | Ava        | Ellis     |
+| 2017-08-14 | Early      | Logan      | Butler    |
+| 2017-08-14 | Late       | Logan      | Butler    |
+| 2017-08-15 | Early      | Logan      | Butler    |
+| 2017-08-15 | Late       | Logan      | Butler    |
+| 2017-08-16 | Early      | Logan      | Butler    |
+| 2017-08-16 | Late       | Logan      | Butler    |
++------------+------------+------------+-----------+
+
+Select Date_Format(Shift_date,'%Y-%m-%d') as Shift_date, Shift_type, First_name, Last_name from Shift
+Join Staff on Staff.Staff_code=Shift.Manager
+Order by Shift_date
