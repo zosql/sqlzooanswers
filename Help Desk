@@ -501,3 +501,43 @@ where Rank = 1
 | Pitiable Shipping |            2 |                  2 |
 | Whale Shipping    |            2 |                  2 |
 +-------------------+--------------+--------------------+
+
+-- Query A: gives the ids that raised a ticket on the date mentioned
+
+select Company_name, count(Distinct(Issue.caller_id)) caller_count
+from Issue
+join Caller on Issue.Caller_id=Caller.Caller_id
+join Customer on Customer.Company_ref=Caller.Company_ref
+WHERE DATE_FORMAT(call_date, '%Y-%m-%d') = '2017-08-13'
+group by company_name
+
+-- Query B: gives the distinct registered callers with each company
+
+select Company_name, count(Distinct(Caller.caller_id)) registered_callers
+from Caller 
+join Customer on Customer.Company_ref=Caller.Company_ref
+group by company_name
+
+-- Final Query C: gives the desired result
+
+select Novo.company_name, Novo.caller_count, Novo2.registered_callers
+from
+(
+select Company_name, count(Distinct(Issue.caller_id)) caller_count
+from Issue
+join Caller on Issue.Caller_id=Caller.Caller_id
+join Customer on Customer.Company_ref=Caller.Company_ref
+WHERE DATE_FORMAT(call_date, '%Y-%m-%d') = '2017-08-13'
+group by company_name
+) Novo
+
+Join
+(
+select Company_name, count(Distinct(Caller.caller_id)) registered_callers
+from Caller 
+join Customer on Customer.Company_ref=Caller.Company_ref
+group by company_name
+) Novo2
+
+on Novo.company_name=Novo2.company_name
+where caller_count=registered_callers
