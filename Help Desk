@@ -376,7 +376,7 @@ where Rank<30
 
 -- 13.Annoying customers. Customers who call in the last five minutes of a shift are annoying. Find the most active customer who has never been annoying.
 
--- Result:
+-- Final Result:
 
 +--------------+------+
 | Company_name | abna |
@@ -384,3 +384,120 @@ where Rank<30
 | High and Co. |   20 |
 +--------------+------+
 
+-- Query A: Identifies the list of active customers
+
+select company_name, count(call_ref) Z
+from Customer
+right join Caller on Customer.Company_ref=Caller.Company_ref
+right join Issue on Issue.Caller_id=Caller.Caller_id
+group by company_name
+order by Z Desc
+
+-- Result A:
+
+company_name	Z
+Gimmick Inc.	22
+High and Co.	20
+Hamming Services	19
+Hydrophobic Inc.	18
+Guttata Shipping	17
+Lady Retail	16
+Haunt Services	15
+Immemorial Shipping	14
+Medusa Shipping	14
+Jesting and Co.	13
+Logis Shipping	12
+Diaphonic Shipping	12
+Juan and Co.	12
+Dasher Services	12
+Fawe Group	11
+Mock Group	11
+Genus Ltd.	11
+Whale Shipping	11
+Snowless Traders	10
+Parade and Co.	10
+Miraculously Shipping	10
+Desert Inc.	10
+Snowless Logistics	10
+Jesting Services	10
+Nightshade Group	10
+Crepusculous Inc.	9
+Comfiture Traders	9
+Oxbridge Shipping	9
+Train Services	9
+Bai Services	9
+Askew Inc.	8
+Packman Shipping	8
+Take Group	8
+Cell Group	7
+Tetraneuris Shipping	7
+Stoker Traders	7
+Sprightlier Logistics	7
+Cupulate Ltd.	7
+Corncob Shipping	7
+Askew Shipping	7
+Affright Retail	6
+Corps Ltd.	6
+Pharyngeal Services	6
+Sylvite Group	5
+Variform Traders	5
+Confusion Services	5
+Shaped Logistics	5
+Pitiable Shipping	4
+Rajab Group	4
+Somebody Logistics	2
+
+-- Query B: Identifies the list of customers who have calls within the last 5 mins of shift end timings
+
+select company_name, count(call_ref)
+from Customer
+right join Caller on Customer.Company_ref=Caller.Company_ref
+right join Issue on Issue.Caller_id=Caller.Caller_id
+WHERE(DATE_FORMAT(call_date, '%H') = 14 OR DATE_FORMAT(call_date, '%H') = 20)
+AND DATE_FORMAT(call_date, '%i')>=55
+group by company_name
+
+-- Result B:
+company_name	count(call_re..
+Gimmick Inc.	1
+
+-- Final Query C: Merge B into A as ANew where Not B with some modification to show only Rank 1
+
+Select company_name, Z abna
+from
+(
+select company_name, count(call_ref) Z, rank() over(order by count(call_ref) Desc) Rank
+from Customer
+right join Caller on Customer.Company_ref=Caller.Company_ref
+right join Issue on Issue.Caller_id=Caller.Caller_id
+where company_name NOT IN
+(
+select company_name
+from Customer
+right join Caller on Customer.Company_ref=Caller.Company_ref
+right join Issue on Issue.Caller_id=Caller.Caller_id
+WHERE(DATE_FORMAT(call_date, '%H') = 14 OR DATE_FORMAT(call_date, '%H') = 20)
+AND DATE_FORMAT(call_date, '%i')>=55
+group by company_name
+)
+group by company_name
+order by Z Desc
+) AnotB
+where Rank = 1
+
+-- 14.Maximal usage. If every caller registered with a customer makes at least one call in one day then that customer has "maximal usage" of the service. List the maximal customers for 2017-08-13.
+
+-- Result:
+
++-------------------+--------------+--------------------+
+| company_name      | caller_count | registered_callers |
++-------------------+--------------+--------------------+
+| Askew Inc.        |            2 |                  2 |
+| Bai Services      |            2 |                  2 |
+| Dasher Services   |            3 |                  3 |
+| High and Co.      |            5 |                  5 |
+| Lady Retail       |            4 |                  4 |
+| Packman Shipping  |            3 |                  3 |
+| Pitiable Shipping |            2 |                  2 |
+| Whale Shipping    |            2 |                  2 |
++-------------------+--------------+--------------------+
