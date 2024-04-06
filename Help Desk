@@ -544,7 +544,8 @@ where caller_count=registered_callers
 
 -- 15.Consecutive calls occur when an operator deals with two callers within 10 minutes. Find the longest sequence of consecutive calls – give the name of the operator and the first and last call date in the sequence.
 -- https://sqlzoo.net/wiki/Helpdesk_Hard_Questions
--- Result:
+
+-- Result Not Attained:
 +----------+---------------------+---------------------+-------+
 | taken_by | first_call          | last_call           | calls |
 +----------+---------------------+---------------------+-------+
@@ -617,3 +618,38 @@ TIMESTAMPDIFF(MINUTE, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partitio
 from Issue
 ) Novo
 ) Novo2
+
+-- Query 5: More experimenting
+
+select taken_by, max(call_date),count(Rank), min(call_date)
+from
+(
+select taken_by, RNA-RNN Rank, Flag, RNA, RNN, O, A, call_date
+from
+(
+select taken_by, Flag, rank() over(partition by taken_by order by O) RNA, row_number() over(partition by taken_by, Flag order by O) RNN, O, A, call_date
+from
+(
+select taken_by,
+(
+Case
+When difference<=10
+Then 1
+Else 0
+End
+)Flag,
+O, A, difference, call_date
+From
+(
+select taken_by, call_date,
+date_format(call_date,'%Y-%m-%d %T')O, (lead(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date Asc))A,
+TIMESTAMPDIFF(MINUTE, date_format(call_date,'%Y-%m-%d %T'), (lead(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date))) AS difference
+from Issue
+) Novo
+)Novo2
+order by taken_by, O
+)Novo3
+group by taken_by, Flag, Rank
+) Novo4
+group by taken_by
+order by taken_by
