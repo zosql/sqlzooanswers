@@ -543,7 +543,7 @@ on Novo.company_name=Novo2.company_name
 where caller_count=registered_callers
 
 -- 15.Consecutive calls occur when an operator deals with two callers within 10 minutes. Find the longest sequence of consecutive calls – give the name of the operator and the first and last call date in the sequence.
-
+-- https://sqlzoo.net/wiki/Helpdesk_Hard_Questions
 -- Result:
 +----------+---------------------+---------------------+-------+
 | taken_by | first_call          | last_call           | calls |
@@ -569,3 +569,51 @@ JE1	2017-08-14	2017-08-14 14:06:00	2017-08-14 19:58:00	47
 ME2	2017-08-16	2017-08-16 14:04:00	2017-08-16 19:40:00	51
 MM1	2017-08-13	2017-08-13 08:24:00	2017-08-13 13:58:00	48
 NS1	2017-08-15	2017-08-15 08:00:00	2017-08-15 13:46:00	51
+
+-- Query B: gives the difference in min between two consequent calls taken by operators
+
+select taken_by, 
+date_format(call_date,'%Y-%m-%d %T')O, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date))A,
+TIMESTAMPDIFF(MINUTE, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date)),date_format(call_date,'%Y-%m-%d %T') ) AS difference
+from Issue
+
+-- Query C: generates a sequence of 1s if found recurrent
+
+
+select taken_by, O, A, difference,
+(case
+when difference<=10
+then 1
+else 2
+end) Diff,
+row_number() over(partition by taken_by order by O)RN
+
+from
+(
+select taken_by, 
+date_format(call_date,'%Y-%m-%d %T')O, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date))A,
+TIMESTAMPDIFF(MINUTE, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date)),date_format(call_date,'%Y-%m-%d %T') ) AS difference
+from Issue
+) Novo
+
+-- Query 4: experimenting
+
+select taken_by, A,O,SUM(Flag) OVER (ORDER BY A) AS RunningFlag, RN
+
+from
+(
+select taken_by, A,O,
+(case
+when difference<=10
+then 1
+else 2
+end) Flag, row_number() over(partition by taken_by order by O) RN
+
+from
+(
+select taken_by, 
+date_format(call_date,'%Y-%m-%d %T')O, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date))A,
+TIMESTAMPDIFF(MINUTE, (lag(date_format(call_date,'%Y-%m-%d %T'),1) over(partition by taken_by order by call_date)),date_format(call_date,'%Y-%m-%d %T') ) AS difference
+from Issue
+) Novo
+) Novo2
