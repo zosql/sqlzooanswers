@@ -541,3 +541,31 @@ group by company_name
 
 on Novo.company_name=Novo2.company_name
 where caller_count=registered_callers
+
+-- 15.Consecutive calls occur when an operator deals with two callers within 10 minutes. Find the longest sequence of consecutive calls – give the name of the operator and the first and last call date in the sequence.
+
+-- Result:
++----------+---------------------+---------------------+-------+
+| taken_by | first_call          | last_call           | calls |
++----------+---------------------+---------------------+-------+
+| AB1      | 2017-08-14 09:06:00 | 2017-08-14 10:17:00 |    24 |
++----------+---------------------+---------------------+-------+
+
+-- Query A: gives the calls taken by each operator daily without the filter of being consecutive
+
+select taken_by, date_format(call_date,'%Y-%m-%d') day, date_format(min(call_date),'%Y-%m-%d %T') first_call, date_format(max(call_date),'%Y-%m-%d %T') last_call, count(taken_by) calls
+from Issue
+group by taken_by, day
+
+Result:
+taken_by	day	first_call	last_call	calls
+AB1	2017-08-14	2017-08-14 08:19:00	2017-08-14 13:52:00	58
+AB2	2017-08-13	2017-08-13 14:01:00	2017-08-13 19:58:00	38
+AW1	2017-08-12	2017-08-12 08:16:00	2017-08-12 13:58:00	51
+EB2	2017-08-16	2017-08-16 08:01:00	2017-08-16 13:57:00	65
+HP1	2017-08-15	2017-08-15 14:01:00	2017-08-15 19:45:00	47
+IM1	2017-08-12	2017-08-12 14:02:00	2017-08-12 19:38:00	40
+JE1	2017-08-14	2017-08-14 14:06:00	2017-08-14 19:58:00	47
+ME2	2017-08-16	2017-08-16 14:04:00	2017-08-16 19:40:00	51
+MM1	2017-08-13	2017-08-13 08:24:00	2017-08-13 13:58:00	48
+NS1	2017-08-15	2017-08-15 08:00:00	2017-08-15 13:46:00	51
