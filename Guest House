@@ -97,3 +97,100 @@ join rate on occupants=occupancy and room_type_requested=room_type
 +-------------+
 |      118.56 |
 +-------------+
+
+Select A+B "SUM(amount)"
+from
+(
+select booking_id as ID, sum(amount) A
+from extra
+where booking_id=5346
+) Novo2
+
+Join
+
+(
+select booking.booking_id ID, sum(nights*amount) B
+from booking
+join rate on room_type=room_type_requested and occupancy=occupants
+where booking_id=5346
+) Novo
+
+On Novo.ID=Novo2.ID
+
+-- 8.Edinburgh Residents. For every guest who has the word “Edinburgh” in their address show the total number of nights booked. Be sure to include 0 for those guests who have never had a booking. Show last name, first name, address and number of nights. Order by last name then first name.
+
+-- Result:
+
+first_name	last_name	address	nights
+Deidre	Brock	Edinburgh North and Leith	0
+Ian	Murray	Edinburgh South	13
+Joanna	Cherry	Edinburgh South West	0
+Michelle	Thomson	Edinburgh West	3
+Tommy	Sheppard	Edinburgh East	0
+
+select first_name, last_name, address, coalesce(A,"0") nights
+from
+(
+select first_name, last_name, address, sum(nights) A
+from booking
+right join guest on booking.guest_id=guest.id
+where address LIKE '%Edinburgh%'
+group by first_name
+) Novo
+
+-- 9.How busy are we? For each day of the week beginning 2016-11-25 show the number of bookings starting that day. Be sure to show all the days of the week in the correct order.
+
+-- Result:
++------------+----------+
+| i          | arrivals |
++------------+----------+
+| 2016-11-25 |        7 |
+| 2016-11-26 |        8 |
+| 2016-11-27 |       12 |
+| 2016-11-28 |        7 |
+| 2016-11-29 |       13 |
+| 2016-11-30 |        6 |
+| 2016-12-01 |        7 |
++------------+----------+
+
+select date_format(booking_date,'%Y-%m-%d') i, count(booking_id) arrivals
+from booking
+where booking_date between '2016-11-25' and '2016-12-01'
+group by i
+
+-- 10.How many guests? Show the number of guests in the hotel on the night of 2016-11-21. Include all occupants who checked in that day but not those who checked out.
+
+-- Result:
++----------------+
+| SUM(occupants) |
++----------------+
+|             39 |
++----------------+
+
+-- The sum of occupants in the hotel on 2016-11-21 will be equal to
+-- those who checked in that day ie booking_date = '2016-11-21' and nights any
+-- those who checked in 2016-11-20 (D-1) and stayed >2 nights ie  checked out on 22-11-2024
+-- those who checked in 2016-11-19 (D-2) and stayed >3 nights ie checked out on 23-11-2024
+-- those who checked in 2016-11-19 (D-3) and stayed >4 nights ie checked out on 24-11-2024
+... and so on
+
+-- another way to read the above is that booking_date <= '2016-11-21'
+-- and date_add(booking_date, Interval nights DAY) > '2016-11-21'
+
+select sum(occupants)
+from booking
+where booking_date <= '2016-11-21' and date_add(booking_date, Interval nights DAY) > '2016-11-21'
+
+-- 11.Coincidence. Have two guests with the same surname ever stayed in the hotel on the evening? Show the last name and both first names. Do not include duplicates.
+
++-----------+------------+-------------+
+| last_name | first_name | first_name  |
++-----------+------------+-------------+
+| Davies    | Philip     | David T. C. |
+| Evans     | Graham     | Mr Nigel    |
+| Howarth   | Mr George  | Sir Gerald  |
+| Jones     | Susan Elan | Mr Marcus   |
+| Lewis     | Clive      | Dr Julian   |
+| McDonnell | John       | Dr Alasdair |
++-----------+------------+-------------+
+
