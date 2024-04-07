@@ -88,18 +88,12 @@ JOIN guest ON guest_id = guest.id
 join rate on occupants=occupancy and room_type_requested=room_type
  WHERE first_name='Ruth' and last_name='Cadbury'
 
-select 
-FROM booking 
-JOIN extra ON extra.booking_id = booking.booking_id
-join rate on occupants=occupancy and room_type_requested=room_type
-where booking.booking_id=5346
 
-join
+-- 7. Including Extras. Calculate the total bill for booking 5346 including extras.
 
-(select booking.booking_id as bkid, sum(nights*rate.amount)
-FROM booking 
--- JOIN extra ON extra.booking_id = booking.booking_id
-join rate on occupants=occupancy and room_type_requested=room_type
-where booking.booking_id=5346) room
-
-on bkid=
+-- Result:
++-------------+
+| SUM(amount) |
++-------------+
+|      118.56 |
++-------------+
