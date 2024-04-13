@@ -181,6 +181,10 @@ select sum(occupants)
 from booking
 where booking_date <= '2016-11-21' and date_add(booking_date, Interval nights DAY) > '2016-11-21'
 
+-- Guest House Assessment Hard
+
+-- This has proved to be a major struggle to problem-solve!
+
 -- 11.Coincidence. Have two guests with the same surname ever stayed in the hotel on the evening? Show the last name and both first names. Do not include duplicates.
 
 +-----------+------------+-------------+
@@ -194,3 +198,44 @@ where booking_date <= '2016-11-21' and date_add(booking_date, Interval nights DA
 | McDonnell | John       | Dr Alasdair |
 +-----------+------------+-------------+
 
+-- 1st query attempt is not showing the right answer because it includes duplicates and self joining is creating additional issues
+select *
+from
+(
+select *
+from guest a
+join booking c on guest_id=a.id
+) Novo
+join
+(
+select *
+from guest b
+join booking d on guest_id=b.id
+) Novo2
+on a.last_name=b.last_name
+where a.first_name != b.first_name
+and b.booking_date = d.booking_date
+
+-- 12.Check out per floor. The first digit of the room number indicates the floor – e.g. room 201 is on the 2nd floor. For each day of the week beginning 2016-11-14 show how many rooms are being vacated that day by floor number. Show all days in the correct order.
+
++------------+-----+-----+-----+
+| i          | 1st | 2nd | 3rd |
++------------+-----+-----+-----+
+| 2016-11-14 |   5 |   3 |   4 |
+| 2016-11-15 |   6 |   4 |   1 |
+| 2016-11-16 |   2 |   2 |   4 |
+| 2016-11-17 |   5 |   3 |   6 |
+| 2016-11-18 |   2 |   3 |   2 |
+| 2016-11-19 |   5 |   5 |   1 |
+| 2016-11-20 |   2 |   2 |   2 |
++------------+-----+-----+-----+
+
+-- 1st query attempt shows the first two required columns
+
+select date_format(booking_date,'%Y-%m-%d') d, count(room_no) as "1st"
+from booking
+where booking_date between "2016-11-14" and "2016-11-20"
+and room_no LIKE "1%"
+group by d
+
+-- 
