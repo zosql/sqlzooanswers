@@ -218,6 +218,7 @@ and b.booking_date = d.booking_date
 
 -- 12.Check out per floor. The first digit of the room number indicates the floor – e.g. room 201 is on the 2nd floor. For each day of the week beginning 2016-11-14 show how many rooms are being vacated that day by floor number. Show all days in the correct order.
 
+-- Expected result:
 +------------+-----+-----+-----+
 | i          | 1st | 2nd | 3rd |
 +------------+-----+-----+-----+
@@ -230,7 +231,7 @@ and b.booking_date = d.booking_date
 | 2016-11-20 |   2 |   2 |   2 |
 +------------+-----+-----+-----+
 
--- 1st query attempt shows the first two required columns
+-- 1st query attempt shows the first two required columns: but logic is based on booking_date alone which means checkins and NOT checkouts as asked
 
 select date_format(booking_date,'%Y-%m-%d') d, count(room_no) as "1st"
 from booking
@@ -238,4 +239,10 @@ where booking_date between "2016-11-14" and "2016-11-20"
 and room_no LIKE "1%"
 group by d
 
--- 
+-- 2nd query attempt: checkout logic = booking_date + nights: but it is not broken by floor number
+
+select date_format(date_add(booking_date, Interval nights DAY),"%Y-%m-%d") i, count(*)
+from booking
+where date_add(booking_date, Interval nights DAY) between '2016-11-14' and '2016-11-20'
+Group by i
+Order by i
