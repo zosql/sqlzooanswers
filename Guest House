@@ -7,8 +7,14 @@
 | 2016-11-27   |      5 |
 +--------------+--------+
 
+-- soln1
 SELECT date_format(booking_date,'%Y-%m-%d')booking_date,nights
 FROM booking JOIN guest ON guest_id = guest.id
+ WHERE guest_id=1183
+
+-- soln2
+SELECT date_format(booking_date,'%Y-%m-%d')booking_date,nights
+FROM booking
  WHERE guest_id=1183
 
 -- 2.When do they get here? List the arrival time and the first and last names for all guests due to arrive on 2016-11-05, order the output by time of arrival.
@@ -40,10 +46,18 @@ order by arrival_time
 |       5154 | double              |         1 |  56.00 |
 |       5295 | family              |         3 |  84.00 |
 +------------+---------------------+-----------+--------+
+
+-- soln1
 select booking_id, room_type_requested, occupants, amount
 from rate
 join booking on room_type_requested=room_type
 where booking_id IN (5152, 5165, 5154, 5295) and occupancy=occupants
+
+-- soln2
+select booking_id, room_type_requested, occupants, amount
+from rate
+join booking on room_type_requested=room_type and occupancy=occupants 
+where booking_id IN (5152, 5165, 5154, 5295)
 
 -- 4.Who’s in 101? Find who is staying in room 101 on 2016-12-03, include first name, last name and address.
 
@@ -67,10 +81,18 @@ guest_id	Bookings	Nights
 1185	3	8
 1270	2	3
 
+-- soln1:
 select guest_id, count(booking_id) Bookings, sum(nights) Nights
 from guest
 join booking on guest_id=guest.id
 where guest_id = '1185' or guest_id='1270'
+group by guest_id
+
+-- soln2:
+select guest_id, count(booking_id) Bookings, sum(nights) Nights
+from guest
+join booking on guest_id=guest.id
+where guest_id IN (1185, 1270)
 group by guest_id
 
 -- 6.Ruth Cadbury. Show the total amount payable by guest Ruth Cadbury for her room bookings. You should JOIN to the rate table using room_type_requested and occupants.
@@ -82,11 +104,20 @@ group by guest_id
 |             552.00 |
 +--------------------+
 
+-- soln1:
 SELECT sum(amount*nights)
 FROM booking 
 JOIN guest ON guest_id = guest.id
 join rate on occupants=occupancy and room_type_requested=room_type
  WHERE first_name='Ruth' and last_name='Cadbury'
+
+-- soln2:
+select sum(rate.amount*nights)+extra.amount
+from rate
+join booking on room_type_requested=room_type and occupancy=occupants
+join guest on guest.id=guest_id
+left join extra on extra.booking_id=booking.booking_id
+where first_name ="Ruth" and last_name = "Cadbury"
 
 
 -- 7. Including Extras. Calculate the total bill for booking 5346 including extras.
@@ -98,6 +129,7 @@ join rate on occupants=occupancy and room_type_requested=room_type
 |      118.56 |
 +-------------+
 
+-- soln1:
 Select A+B "SUM(amount)"
 from
 (
@@ -114,8 +146,15 @@ from booking
 join rate on room_type=room_type_requested and occupancy=occupants
 where booking_id=5346
 ) Novo
-
 On Novo.ID=Novo2.ID
+
+-- soln2:
+select round(sum(extra.amount)+sum(rate.amount*nights)/2,2)
+from rate
+join booking on room_type_requested=room_type and occupancy=occupants
+join guest on guest.id=guest_id
+left join extra on extra.booking_id=booking.booking_id
+where booking.booking_id="5346"
 
 -- 8.Edinburgh Residents. For every guest who has the word “Edinburgh” in their address show the total number of nights booked. Be sure to include 0 for those guests who have never had a booking. Show last name, first name, address and number of nights. Order by last name then first name.
 
@@ -128,6 +167,7 @@ Joanna	Cherry	Edinburgh South West	0
 Michelle	Thomson	Edinburgh West	3
 Tommy	Sheppard	Edinburgh East	0
 
+-- soln1:
 select first_name, last_name, address, coalesce(A,"0") nights
 from
 (
@@ -137,6 +177,18 @@ right join guest on booking.guest_id=guest.id
 where address LIKE '%Edinburgh%'
 group by first_name
 ) Novo
+
+-- soln2:
+select last_name, first_name, address, coalesce(A,"0") nights
+from
+(
+select last_name, first_name, address, sum(nights) A
+from booking
+right join guest on booking.guest_id=guest.id
+where address LIKE '%Edinburgh%'
+group by first_name
+) Novo
+order by last_name, first_name
 
 -- 9.How busy are we? For each day of the week beginning 2016-11-25 show the number of bookings starting that day. Be sure to show all the days of the week in the correct order.
 
