@@ -218,7 +218,7 @@ and b.booking_date = d.booking_date
 
 -- 12.Check out per floor. The first digit of the room number indicates the floor – e.g. room 201 is on the 2nd floor. For each day of the week beginning 2016-11-14 show how many rooms are being vacated that day by floor number. Show all days in the correct order.
 
--- Expected result:
+-- Expected result: achieved!
 +------------+-----+-----+-----+
 | i          | 1st | 2nd | 3rd |
 +------------+-----+-----+-----+
@@ -246,3 +246,72 @@ from booking
 where date_add(booking_date, Interval nights DAY) between '2016-11-14' and '2016-11-20'
 Group by i
 Order by i
+
+-- 3rd query attempt and success!
+
+select Novo.i, 1st, 2nd, 3rd
+from
+(
+select date_format(date_add(booking_date, Interval nights DAY),"%Y-%m-%d") as i, count(*) 1st
+from booking
+where date_add(booking_date, Interval nights DAY) between '2016-11-14' and '2016-11-20' and room_no LIKE "1%"
+Group by i
+Order by i
+) Novo
+Join
+(
+select date_format(date_add(booking_date, Interval nights DAY),"%Y-%m-%d") as i, count(*) 2nd
+from booking
+where date_add(booking_date, Interval nights DAY) between '2016-11-14' and '2016-11-20' and room_no LIKE "2%"
+Group by i
+Order by i
+) Novo2
+on Novo.i=Novo2.i
+Join
+(
+select date_format(date_add(booking_date, Interval nights DAY),"%Y-%m-%d") as i, count(*) 3rd
+from booking
+where date_add(booking_date, Interval nights DAY) between '2016-11-14' and '2016-11-20' and room_no LIKE "3%"
+Group by i
+Order by i
+) Novo3
+on Novo2.i=Novo3.i
+
+-- 13.Free rooms? List the rooms that are free on the day 25th Nov 2016.
+
+-- Expected result:
++-----+
+| id  |
++-----+
+| 207 |
+| 210 |
+| 304 |
++-----+
+
+-- query attempt 1: gives room no where checkout is happening on 25th Nov 2016 precisely
+select *
+from booking
+where date_add(booking_date, Interval nights DAY) <'2016-11-25' 
+and booking_date <> '2016-11-25'
+Group by room_no
+Order by room_no
+
+-- however, the inventory of rooms is much larger
+-- checkout might already have happened which means booking date+ nights < 25/11/16
+-- checkin didnt happen on 25/11/16
+
+-- query attempt 2: booking date + night can be equal to 25/11/16 ie 24th+1 night = checkout on 25th and checkin shouldn't happen on 25th
+select *
+from booking
+where date_add(booking_date, Interval nights DAY)<='2016-11-25' 
+and booking_date!='2016-11-25'
+Order by room_no
+
+and 
+
+select count(distinct(room_no))
+from booking
+where date_add(booking_date, Interval nights DAY)<='2016-11-25' 
+and booking_date<>'2016-11-25'
+
+-- this attempt is counting 100% of the rooms as available on 25/11/16 per this logic.
