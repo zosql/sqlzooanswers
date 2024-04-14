@@ -239,6 +239,8 @@ where booking_date <= '2016-11-21' and date_add(booking_date, Interval nights DA
 
 -- 11.Coincidence. Have two guests with the same surname ever stayed in the hotel on the evening? Show the last name and both first names. Do not include duplicates.
 
+-- Expected result: achieved!
+
 +-----------+------------+-------------+
 | last_name | first_name | first_name  |
 +-----------+------------+-------------+
@@ -367,3 +369,12 @@ where date_add(booking_date, Interval nights DAY)<='2016-11-25'
 and booking_date<>'2016-11-25'
 
 -- this attempt is counting 100% of the rooms as available on 25/11/16 per this logic.
+
+
+select sum(amount) A
+from extra
+
+select sum(rate.amount*nights)
+from rate
+join booking on room_type_requested=room_type and occupancy=occupants
+left join extra on extra.booking_id=booking.booking_id
