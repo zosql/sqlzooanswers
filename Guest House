@@ -270,6 +270,26 @@ on a.last_name=b.last_name
 where a.first_name != b.first_name
 and b.booking_date = d.booking_date
 
+-- soln2: WORKED!
+
+select Novo2.last_name, Novo2.first_name, Novo.first_name
+from
+(
+select *
+from guest a
+join booking c on guest_id=a.id
+) Novo
+join
+(
+select *
+from guest b
+join booking d on guest_id=b.id
+) Novo2
+on Novo.last_name=Novo2.last_name
+where Novo.first_name <> Novo2.first_name
+and date_add(Novo.booking_date, Interval Novo.nights DAY) > Novo2.booking_date and Novo.booking_date <= Novo2.booking_date
+group by Novo2.last_name
+
 -- 12.Check out per floor. The first digit of the room number indicates the floor – e.g. room 201 is on the 2nd floor. For each day of the week beginning 2016-11-14 show how many rooms are being vacated that day by floor number. Show all days in the correct order.
 
 -- Expected result: achieved!
@@ -333,7 +353,7 @@ on Novo2.i=Novo3.i
 
 -- 13.Free rooms? List the rooms that are free on the day 25th Nov 2016.
 
--- Expected result:
+-- Expected result: Achieved!
 +-----+
 | id  |
 +-----+
@@ -370,6 +390,61 @@ and booking_date<>'2016-11-25'
 
 -- this attempt is counting 100% of the rooms as available on 25/11/16 per this logic.
 
+-- query attempt 3 based on the logic of subtracting from inventory rooms booked on 25/11/16 and those occupied due to previous bookings.
+
+select *
+from booking
+where room_no NOT IN 
+(select room_no
+from booking
+where date_add(booking_date, Interval nights DAY)>'2016-11-25'
+group by room_no)
+
+102
+107
+108
+109
+203
+207
+308
+
+-- But only 7 rooms seem occupied leaving 21 rooms empty - which does not appear correct.
+
+-- query attempt 4 - updated logic of rooms having been booked before or on 25/11/16 and having nights adding up to beyond 25/11/16
+-- using combined logic of attempts 3 and 4
+
+select distinct(id)
+from room
+join booking on booking.room_no=room.id
+where id not IN 
+(select distinct(room_no)
+from booking
+where date_add(booking_date, Interval nights DAY)>'2016-11-25' and booking_date <='2016-11-25'
+group by room_no)
+
+-- 14.Single room for three nights required. A customer wants a single room for three consecutive nights. Find the first available date in December 2016.
+
+-- Desired result:
++-----+------------+
+| id  | MIN(i)     |
++-----+------------+
+| 201 | 2016-12-11 |
++-----+------------+
+
+-- query 1 approach: 
+-- we know how to find vacant room ids on any date from room table inventory from previous Q (from room table)
+-- we know the where condition of this question booking_date between '2016-12-01' and '2016-12-29' (from booking table)
+-- and room_type_requested= 'single' (from booking)
+
+select *
+from room
+join booking on room_type_requested=room_type and max_occupancy=occupants
+where booking_date between '2016-12-01' and '2016-12-29' and room_type_requested = 'single'
+
+-- Clearly the only options are going to be room_nos: 101, 201, 301 as single only rooms.
+-- Also date_add(booking_date, Interval 3 DAY) < 2016-12-29
+
+-- 15.
 
 select sum(amount) A
 from extra
