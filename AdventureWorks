@@ -184,3 +184,64 @@ where culture='fr' and ProductID=736
 -- Result:
 Description
 Le cadre LL en aluminium offre une conduite confortable, une excellente absorption des bosses pour un trÃ¨s bon rapport qualitÃ©-prix.
+
+-- 9.Use the SubTotal value in SaleOrderHeader to list orders from the largest to the smallest. For each order show the CompanyName and the SubTotal and the total weight of the order.
+
+Select CompanyName, SubTotal, sum(OrderQty*Weight) total_weight
+from SalesOrderHeader
+join Customer on Customer.CustomerID=SalesOrderHeader.CustomerID
+join SalesOrderDetail on SalesOrderDetail.SalesOrderID = SalesOrderHeader.SalesOrderID
+join Product on SalesOrderDetail.ProductID=Product.ProductID
+Group by SalesOrderDetail.SalesOrderID
+Order by SubTotal Desc
+
+-- Result:
+CompanyName	SubTotal	total_weight
+Action Bicycle Specialists	108561.83	1133911.56
+Metropolitan Bicycle Supply	98278.69	679588.02
+Bulk Discount Store	88812.86	34813.05
+Eastside Department Store	83858.43	565638.72
+Riding Cycles	78029.69	504095.33
+Many Bikes Store	74058.81	744328.60
+Instruments and Parts Company	63980.99	731576.77
+Extreme Riding Supplies	57634.63	589939.11
+Trailblazing Sports	41622.05	234328.12
+Professional Sales and Service	39785.33	396843.63
+Nearby Cycle Shop	38418.69	547260.47
+Closest Bicycle Store	35775.21	340144.28
+Thrilling Bike Tours	13823.71	191855.76
+Paints and Solvents Company	12685.89	122609.42
+Remarkable Bike Store	6634.30	45103.50
+Engineered Bike Systems	3398.17	37420.66
+Sports Products Store	3324.28	53389.08
+Discount Tours	2980.79	14977.56
+Sports Store	2453.76	38354.65
+Coalition Bike Company	2415.67	29183.00
+Aerobic Exercise Company	2137.23	6770.44
+Tachometers and Accessories	2016.34	10591.33
+Thrifty Parts and Sales	1141.58	3175.14
+Vigorous Sports Store	1059.31	1043.26
+Good Toys	880.35	2050.23
+Transport Bikes	602.19	13301.08
+Channel Outlet	550.39	
+Futuristic Bikes	246.74	
+The Bicycle Accessories Company	106.54	
+West Side Mart	78.81	317.00
+Essential Bike Works	40.90	
+
+-- 10.How many products in ProductCategory 'Cranksets' have been sold to an address in 'London'?
+
+Select sum(OrderQty)
+from
+ProductCategory
+join Product on Product.ProductCategoryID=ProductCategory.ProductCategoryID
+join SalesOrderDetail on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderHeader.SalesOrderID=SalesOrderDetail.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+join CustomerAddress on CustomerAddress.CustomerID=Customer.CustomerID
+join Address on CustomerAddress.AddressID=Address.AddressID
+where ProductCategory.Name ='Cranksets' and city = 'London'
+
+-- Result:
+sum(OrderQty)
+9
