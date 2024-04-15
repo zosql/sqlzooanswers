@@ -1,0 +1,186 @@
+-- AdventureWorks
+
+-- Graduated questions
+
+-- Sample queries
+
+-- 1.Show the CompanyName for James D. Kramer
+
+select CompanyName
+from Customer
+where FirstName='James' and MiddleName='D.' and LastName='Kramer'
+
+-- Correct answer
+CompanyName
+Refined Department Stores
+
+-- 2.Show all the addresses listed for 'Modular Cycle Systems'
+
+Select CompanyName, AddressType, AddressLine1
+from Address
+Join CustomerAddress on Address.AddressID=CustomerAddress.AddressID
+Join Customer on Customer.CustomerID=CustomerAddress.CustomerID
+where CompanyName = 'Modular Cycle Systems'
+
+-- Correct answer
+CompanyName	AddressType	AddressLine1
+Modular Cycle Systems	Main Office	800 Interchange Blvd.
+Modular Cycle Systems	Shipping	165 North Main
+
+-- 3.Show OrdeQty, the Name and the ListPrice of the order made by CustomerID 635
+
+Select OrderQty, Name, ListPrice
+from
+SalesOrderDetail
+Join SalesOrderHeader on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+Join Product on
+SalesOrderDetail.ProductID=Product.ProductID
+where CustomerID =635
+
+-- Correct answer
+OrderQty	Name	ListPrice
+2	ML Mountain Pedal	62.09
+1	HL Mountain Frame - Silver, 42	1364.50
+1	Mountain-500 Silver, 40	564.99
+2	Mountain-400-W Silver, 40	769.49
+
+-- AdventureWorks easy questions
+
+-- 1.Show the first name and the email address of customer with CompanyName 'Bike World'
+
+select FirstName, EmailAddress
+from Customer
+where CompanyName= 'Bike World'
+
+-- Result:
+FirstName	EmailAddress
+Kerim	kerim0@adventure-works.com
+
+-- 2.Show the CompanyName for all customers with an address in City 'Dallas'.
+
+Select CompanyName
+from Customer
+join CustomerAddress on CustomerAddress.CustomerID=Customer.CustomerID
+join Address on Address.AddressID=CustomerAddress.AddressID
+where City='Dallas'
+
+Result:
+CompanyName
+Town Industries
+Elite Bikes
+Elite Bikes
+Third Bike Store
+Unsurpassed Bikes
+Rental Bikes
+
+-- 3.How many items with ListPrice more than $1000 have been sold?
+
+select sum(OrderQty) Total_Items, count(distinct(SalesOrderDetail.ProductID)) Distinct_Items, count(*) Orders_Placed
+from SalesOrderDetail
+join Product on SalesOrderDetail.ProductID=Product.ProductID
+where ListPrice>1000
+
+-- Result:
+Total_Items	Distinct_Items	Orders_Placed
+451	41	131
+
+-- 4.Give the CompanyName of those customers with orders over $100000. Include the subtotal plus tax plus freight.
+
+Select CompanyName,Concat("$",SubTotal+TaxAmt+Freight) TOV
+from SalesOrderHeader
+join Customer on Customer.CustomerID=SalesOrderHeader.CustomerID
+where SubTotal + TaxAmt + Freight > 100000
+Order by Customer.CustomerID
+
+-- Result:
+CompanyName	TOV
+Action Bicycle Specialists	$119960.83
+Metropolitan Bicycle Supply	$108597.96
+
+-- 5.Find the number of left racing socks ('Racing Socks, L') ordered by CompanyName 'Riding Cycles'
+
+Select CompanyName, sum(OrderQty)
+from Product
+join SalesOrderDetail on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderHeader.SalesOrderID=SalesOrderDetail.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+where Name = "Racing Socks, L" and CompanyName = 'Riding Cycles'
+
+-- Result:
+CompanyName	sum(OrderQty)
+Riding Cycles	3
+
+-- AdventureWorks medium questions
+
+-- 6.A "Single Item Order" is a customer order where only one item is ordered. Show the SalesOrderID and the UnitPrice for every Single Item Order.
+
+select SalesOrderID, UnitPrice
+from SalesOrderDetail
+where OrderQty=1
+group by SalesOrderID
+
+-- Result:
+SalesOrderID	UnitPrice
+71774	356.90
+71776	63.90
+71780	323.99
+71782	1430.44
+71783	72.16
+71784	445.41
+71796	602.35
+71797	29.99
+71815	202.33
+71816	728.91
+71831	1376.99
+71832	41.99
+71845	54.89
+71846	818.70
+71856	445.41
+71858	445.41
+71863	1020.59
+71867	858.90
+71897	1430.44
+71898	1430.44
+71899	113.00
+71902	218.45
+71915	48.59
+71920	1020.59
+71923	2.99
+71935	24.29
+71936	20.99
+
+-- 7.Where did the racing socks go? List the product name and the CompanyName for all Customers who ordered ProductModel 'Racing Socks'.
+
+Select Product.Name,CompanyName
+from ProductModel
+join Product on Product.ProductModelID=ProductModel.ProductModelID
+join SalesOrderDetail on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderHeader.SalesOrderID=SalesOrderDetail.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+where ProductModel.Name = "Racing Socks"
+
+-- Result:
+Name	CompanyName
+Racing Socks, L	Eastside Department Store
+Racing Socks, L	Riding Cycles
+Racing Socks, M	Thrifty Parts and Sales
+Racing Socks, L	Sports Products Store
+Racing Socks, M	Sports Products Store
+Racing Socks, L	Essential Bike Works
+Racing Socks, M	The Bicycle Accessories Company
+Racing Socks, L	The Bicycle Accessories Company
+Racing Socks, M	Remarkable Bike Store
+Racing Socks, L	Remarkable Bike Store
+
+-- 8.Show the product description for culture 'fr' for product with ProductID 736.
+
+Select Description
+from ProductDescription
+join ProductModelProductDescription on ProductModelProductDescription.ProductDescriptionID=ProductDescription.ProductDescriptionID
+join ProductModel on ProductModel.ProductModelID=ProductModelProductDescription.ProductModelID
+join Product on Product.ProductModelID=ProductModel.ProductModelID
+where culture='fr' and ProductID=736
+
+-- Result:
+Description
+Le cadre LL en aluminium offre une conduite confortable, une excellente absorption des bosses pour un trÃ¨s bon rapport qualitÃ©-prix.
