@@ -245,3 +245,34 @@ where ProductCategory.Name ='Cranksets' and city = 'London'
 -- Result:
 sum(OrderQty)
 9
+
+-- AdventureWorks hard questions
+
+-- 11.For every customer with a 'Main Office' in Dallas show AddressLine1 of the 'Main Office' and AddressLine1 of the 'Shipping' address - if there is no shipping address leave it blank. Use one row per customer.
+
+select Main.customerID, Main.AddressLine1, Shipping.AddressLine1
+from
+(
+select f.CustomerID, d.AddressLine1
+from Address d
+join CustomerAddress e on e.AddressID=d.AddressID
+join Customer f on f.CustomerID=e.CustomerID
+where d.City='Dallas' and e.AddressType='Main Office'
+) Main
+left join
+(
+select c.CustomerID, a.AddressLine1
+from Address a
+join CustomerAddress b on b.AddressID=a.AddressID
+join Customer c on c.CustomerID=b.CustomerID
+where a.City='Dallas' and b.AddressType='Shipping'
+) Shipping
+on Main.CustomerID=Shipping.CustomerID
+
+-- Result:
+CustomerID	AddressLine1	AddressLine1
+112	P.O. Box 6256916	
+130	Po Box 8259024	9178 Jumping St.
+165	2500 North Stemmons Freeway	
+201	Po Box 8035996	
+256	99828 Routh Street, Suite 825	
