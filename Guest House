@@ -448,22 +448,134 @@ order by room_no,booking_date
 
 -- Query 2 approach:
 -- Finding occupied rooms is easier, and then performing NOT IN by room_no. 
--- The challenge is now to find the list of booked rooms and dates with a gap of 3 consequtive nights
+-- The challenge is now to find the list of booked rooms and dates with a gap of 3 or more consequtive nights
 -- ie. subsequent booking_date2 - (previous booking_date1+nights)>=3
 
 -- Manual visual inspection from query 1:
 -- From query 1 it is evident that 101 is booked for 3+5,8+2,10+5,15+3 - hence avai to stay from 18/12/16 for 3 days
 -- 201 is booked for 1+2,3+4,7+4 - hence avai to stay from 11/12/16 for 3 days
--- 301 is booked for 2+2,4+1,5+4,12+1 - hence avai to stay from 10/12/16 for 2 days and 14/14/16 for 3 days
+-- 301 is booked for 2+2,4+1,5+4,12+1 - hence avai to stay from 10/12/16 for 2 days and 13/14/16 for 3 days
 -- Clearly the by logic the winner is room 201 from 11/12/16 onwards.
 
+select room_no, booking_date, booked_till, coalesce(booking_date-(lag(booked_till,1) over (partition by room_no order by booking_date)),"0") Nights_interval
+from
+(
+select room_no, booking_date, date_add(booking_date, Interval nights-1 DAY) booked_till
+from room
+join booking on room_type_requested=room_type and max_occupancy=occupants
+where booking_date between '2016-12-01' and '2016-12-31' and room_type_requested ='single'
+group by booking_id
+order by room_no,booking_date
+) Novo
 
--- 15.
+-- Query 3 approach:
+-- Find dates each room becomes available after existing bookings
+-- Check for each of these available dates whether 3 nights are open consecutively
+-- https://github.com/nikolaosmparoutis/SQL-ZOO-Solutions/blob/master/GuestHouse_HardQuestions.sql
 
-select sum(amount) A
-from extra
+select room_no, MIN(i)
+from
+(
+select room_no, date_format(Available_from,"%Y-%m-%d") i
+from
+(
+select room_no, booking_date, date_add(booking_date, Interval nights DAY) Available_from, lead(booking_date,1) over(partition by room_no order by booking_date) Already_booked
+from room
+join booking on room_type_requested=room_type and max_occupancy=occupants
+where booking_date between '2016-12-01' and '2016-12-31' and room_type_requested ='single'
+group by booking_id
+order by room_no,booking_date
+) Novo
+where datediff(Already_booked,Available_from)>=3 OR Already_booked is NULL
+) Novo2
 
-select sum(rate.amount*nights)
-from rate
-join booking on room_type_requested=room_type and occupancy=occupants
-left join extra on extra.booking_id=booking.booking_id
+because of non-movement to room.id the room_no comes out as 101!
+
+-- Query 4 approach: create new column for room_no - but didnt work
+
+select Free_Room, Min(i)
+from
+(
+select date_format(Available_from,"%Y-%m-%d") i, (case when timestampdiff(Day,Already_booked,Available_from)>=3  OR Already_booked is NULL then Novo.id end) "Free_Room"
+from
+(
+select id, room_no, booking_date, date_add(booking_date, Interval nights DAY) Available_from, lead(booking_date,1) over(partition by room_no order by booking_date) Already_booked
+from room
+left join booking on room_type_requested=room_type and max_occupancy=occupants and room.id=room_no
+where booking_date between '2016-12-01' and '2016-12-31' and room_type_requested ='single'
+group by booking_id
+order by room_no,booking_date
+) Novo
+where datediff(Already_booked,Available_from)>=3 OR Already_booked is NULL
+) Novo2
+
+-- Query 5 - copy approach of limiting sorted rows which could have worked in the above query as well! - https://github.com/nikolaosmparoutis/SQL-ZOO-Solutions/blob/master/GuestHouse_HardQuestions.sql
+
+select free_flag, date_format(Novo3.available_date, "%Y-%m-%d")
+from
+(
+Select Novo2.id, Novo2.room_type, Novo2.booking_date, Novo2.available_date, Novo2.actual_next_booking, (case when timestampdiff(day,available_date, actual_next_booking)>=3 OR actual_next_booking is NULL then Novo2.id end) free_flag
+from
+(
+select room.id, room_type, Novo.booking_date, Novo.available_date, Novo.actual_next_booking
+from room
+join
+(
+select room_no, room_type_requested, booking_date, date_add(booking_date, Interval nights DAY) available_date, (lead(booking_date, 1) over(partition by 
+room_no order by booking_date)) actual_next_booking
+from booking
+where booking_date between "2016-12-01" and "2016-12-31" and room_type_requested='single'
+order by room_no, booking_date
+) Novo
+on room.id=Novo.room_no
+order by id, booking_date
+) Novo2
+order by id, booking_date
+) Novo3
+where free_flag is not Null
+order by available_date
+Limit 1
+
+-- query 6- ie query 4 modified to WORK
+
+select Free_Room, i
+from
+(
+select date_format(Available_from,"%Y-%m-%d") i, (case when timestampdiff(Day,Already_booked,Available_from)>=3  OR Already_booked is NULL then Novo.id end) "Free_Room"
+from
+(
+select id, room_no, booking_date, date_add(booking_date, Interval nights DAY) Available_from, lead(booking_date,1) over(partition by room_no order by booking_date) Already_booked
+from room
+left join booking on room_type_requested=room_type and max_occupancy=occupants and room.id=room_no
+where booking_date between '2016-12-01' and '2016-12-31' and room_type_requested ='single'
+group by booking_id
+order by room_no,booking_date
+) Novo
+where datediff(Already_booked,Available_from)>=3 OR Already_booked is NULL
+) Novo2
+order by i
+limit 1
+
+-- 15.Gross income by week. Money is collected from guests when they leave. For each Thursday in November and December 2016, show the total amount of money collected from the previous Friday to that day, inclusive.
+
+-- Expected Result:
+
++------------+---------------+
+| Thursday   | weekly_income |
++------------+---------------+
+| 2016-11-03 |          0.00 |
+| 2016-11-10 |      12608.94 |
+| 2016-11-17 |      13552.56 |
+| 2016-11-24 |      12929.69 |
+| 2016-12-01 |      11685.14 |
+| 2016-12-08 |      13093.79 |
+| 2016-12-15 |       8975.87 |
+| 2016-12-22 |       1395.77 |
+| 2016-12-29 |          0.00 |
+| 2017-01-05 |          0.00 |
++------------+---------------+
+
+References: 
+1. https://github.com/HaminKo/SQLZoo-Solutions/blob/master/SQLZOO_GuestHouse_Answers.sql
+2. https://stackoverflow.com/questions/53374549/sql-null-values-not-being-shown-in-results
+3. https://cwong8.github.io/projects/sqlzoo/guesthouse
