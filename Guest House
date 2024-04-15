@@ -439,10 +439,24 @@ group by room_no)
 select *
 from room
 join booking on room_type_requested=room_type and max_occupancy=occupants
-where booking_date between '2016-12-01' and '2016-12-29' and room_type_requested = 'single'
+where booking_date between '2016-12-01' and '2016-12-31' and room_type_requested ='single'
+group by booking_id
+order by room_no,booking_date
 
 -- Clearly the only options are going to be room_nos: 101, 201, 301 as single only rooms.
--- Also date_add(booking_date, Interval 3 DAY) < 2016-12-29
+-- Also to date_add(booking_date, Interval 3 DAY) < 2016-12-29
+
+-- Query 2 approach:
+-- Finding occupied rooms is easier, and then performing NOT IN by room_no. 
+-- The challenge is now to find the list of booked rooms and dates with a gap of 3 consequtive nights
+-- ie. subsequent booking_date2 - (previous booking_date1+nights)>=3
+
+-- Manual visual inspection from query 1:
+-- From query 1 it is evident that 101 is booked for 3+5,8+2,10+5,15+3 - hence avai to stay from 18/12/16 for 3 days
+-- 201 is booked for 1+2,3+4,7+4 - hence avai to stay from 11/12/16 for 3 days
+-- 301 is booked for 2+2,4+1,5+4,12+1 - hence avai to stay from 10/12/16 for 2 days and 14/14/16 for 3 days
+-- Clearly the by logic the winner is room 201 from 11/12/16 onwards.
+
 
 -- 15.
 
