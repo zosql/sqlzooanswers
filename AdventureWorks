@@ -569,14 +569,126 @@ ML Mountain Seat/Saddle	2
 Long-Sleeve Logo Jersey, L	2
 Classic Vest, S	3
 
+-- 3.List the name and addresses of companies containing the word 'Bike' (upper or lower case) and companies containing 'cycle' (upper or lower case). Ensure that the 'bike's are listed before the 'cycles's.
+
 select CompanyName, AddressLine1
 from Customer
 join CustomerAddress on Customer.CustomerID=CustomerAddress.CustomerID
 join Address on Address.AddressID=CustomerAddress.AddressID
 where CompanyName LIKE "%BIKE%" or CompanyName LIKE "%bike%" 
 
+UNION
+
 select CompanyName, AddressLine1
 from Customer
 join CustomerAddress on Customer.CustomerID=CustomerAddress.CustomerID
 join Address on Address.AddressID=CustomerAddress.AddressID
 where CompanyName LIKE "%CYCLE%" or CompanyName LIKE "%cycle%" 
+
+-- Result:
+CompanyName	AddressLine1
+A Bike Store	2251 Elliot Avenue
+Advanced Bike Components	12345 Sterling Avenue
+Associated Bikes	5420 West 22500 South
+Sharp Bikes	52560 Free Street
+Bikes and Motorbikes	22580 Free Street
+Bike World	60025 Bollinger Canyon Road
+Coalition Bike Company	Corporate Office
+Two Bike Shops	35525-9th Street Sw
+Frugal Bike Shop	2575 West 2700 South
+Gear-Shift Bikes Limited	2512-4th Ave Sw
+Greater Bike Store	55 Lakeshore Blvd East
+Largest Bike Store	63 W Monroe
+Many Bikes Store	Receiving
+Preferred Bikes	Incom Sports Center
+Scooters and Bikes Store	258101 Nw Evergreen Parkway
+Stationary Bikes and Stands	Sapp Road West
+More Bikes!	25600 E St Andrews Pl
+Mountain Bike Center	6756 Mowry
+Rapid Bikes	992 St Clair Ave East
+Elite Bikes	Po Box 8259024
+Elite Bikes	9178 Jumping St.
+Eighth Bike Store	2500 N Serene Blvd
+South Bike Company	Po Box 83270
+Lots of Bikes Storehouse	4255 East Lies Road
+Initial Bike Company	789 West Alameda
+Fleet Bikes	54254 Pacific Ave.
+Futuristic Bikes	25136 Jefferson Blvd.
+Third Bike Store	2500 North Stemmons Freeway
+Farthermost Bike Shop	99000 S. Avalon Blvd. Suite 750
+Economy Bikes Company	72502 Eastern Ave.
+Full-Service Bike Store	9920 North Telegraph Rd.
+Go-cart and Bike Specialists	2509 W. Frankford
+Weekend Bike Tours	630 N. Capitol Ave.
+Thrilling Bike Tours	4660 Rodeo Road
+Authorized Bike Sales and Rental	490 Ne 4th St
+Basic Bike Company	15 East Main
+Unsurpassed Bikes	Po Box 8035996
+Two-Seater Bikes	5700 Legacy Dr
+Best o' Bikes	250880 Baur Blvd
+Bike Dealers Association	9952 E. Lohman Ave.
+Sample Bike Store	2530 South Colorado Blvd.
+Sample Bike Store	2000 300th Street
+Home Town Bike Store	955 Green Valley Crescent
+Large Bike Shop	600 Boul. Rene-levesque Ouest
+Express Bike Services	586 Fulham Road,
+Rental Bikes	99828 Routh Street, Suite 825
+Highway Bike Shop	Simi @ The Plaza
+Farthest Bike Store	45259 Canada Way
+A Typical Bike Shop	One Dancing, Rr No. 25
+Standard Bikes	9979 Bayview Drive
+Results truncated. Only the first 50 rows have been shown.
+
+-- 4.Show the total order value for each CountryRegion. List by value with the highest first.
+
+select CountyRegion, sum(SubTotal+TaxAmt+Freight) TOV
+from Address
+join CustomerAddress on CustomerAddress.AddressID=Address.AddressID
+join Customer on Customer.CustomerID=CustomerAddress.CustomerID
+join SalesOrderHeader on SalesOrderHeader.CustomerID=Customer.CustomerID
+group by CountyRegion
+order by sum(SubTotal+TaxAmt+Freight) Desc
+
+-- Result:
+CountyRegion	TOV
+United Kingdom	572496.55
+United States	383807.02
+
+-- 5.Find the best customer in each region.
+
+-- Query 1 logic: Tried union logic with and without named tables but it didnt work.
+
+UNION
+
+select e.CountyRegion, g.CompanyName, sum(h.SubTotal+h.TaxAmt+h.Freight) TOV
+from Address e
+join CustomerAddress f on f.AddressID=e.AddressID
+join Customer g on g.CustomerID=f.CustomerID
+join SalesOrderHeader h on h.CustomerID=g.CustomerID
+where e.CountyRegion='United Kingdom'
+group by g.CompanyName
+order by sum(h.SubTotal+h.TaxAmt+h.Freight) Desc
+
+select CountyRegion, CompanyName, sum(SubTotal+TaxAmt+Freight) TOV
+from Address
+join CustomerAddress on CustomerAddress.AddressID=Address.AddressID
+join Customer on Customer.CustomerID=CustomerAddress.CustomerID
+join SalesOrderHeader on SalesOrderHeader.CustomerID=Customer.CustomerID
+where CountyRegion='United Kingdom'
+group by CompanyName
+order by sum(SubTotal+TaxAmt+Freight) Desc
+Limit 1
+
+UNION 
+
+select CountyRegion, CompanyName, sum(SubTotal+TaxAmt+Freight) TOV
+from Address
+join CustomerAddress on CustomerAddress.AddressID=Address.AddressID
+join Customer on Customer.CustomerID=CustomerAddress.CustomerID
+join SalesOrderHeader on SalesOrderHeader.CustomerID=Customer.CustomerID
+where CountyRegion='United States'
+group by CompanyName
+order by sum(SubTotal+TaxAmt+Freight) Desc
+Limit 1
+
+-- query 2 logic: Rank over partition
