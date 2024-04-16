@@ -433,5 +433,150 @@ group by SalesOrderID
 ) Novo
 group by Novo.RANGE
 
--- 15.Identify the three most important cities. Show the break down of top level product category against city.
+-- 15.Identify the three most important cities. Show the breakdown of top-level product category against city.
 
+-- Top-level product category per city means two things cities ranked by quantity or salesvalue
+
+-- query attempt 1 gives top 3 cities
+
+Select City, sum(OrderQty*UnitPrice) SalesValue
+from ProductCategory 
+join Product on ProductCategory.ProductCategoryID=Product.ProductCategoryID
+join SalesOrderDetail on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+join CustomerAddress on CustomerAddress.CustomerID=Customer.CustomerID
+join Address on Address.AddressID=CustomerAddress.AddressID
+group by City
+order by SalesValue Desc
+Limit 3
+
+-- query attempt 2 is to find the break up of product categories across cities
+
+Select City, a.Name
+from ProductCategory a
+join Product b on a.ProductCategoryID=b.ProductCategoryID
+join SalesOrderDetail c on c.ProductID=b.ProductID
+join SalesOrderHeader d on c.SalesOrderID=d.SalesOrderID
+join Customer e on d.CustomerID=e.CustomerID
+join CustomerAddress f on f.CustomerID=e.CustomerID
+join Address g on g.AddressID=f.AddressID
+
+-- Query 3 combines queries 1 and 2: WORKS!
+
+Select Novo.City, Novo2.Name, Novo2.SalesValue
+from
+(
+Select City, sum(OrderQty*UnitPrice) SalesValue
+from ProductCategory 
+join Product on ProductCategory.ProductCategoryID=Product.ProductCategoryID
+join SalesOrderDetail on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+join CustomerAddress on CustomerAddress.CustomerID=Customer.CustomerID
+join Address on Address.AddressID=CustomerAddress.AddressID
+group by City
+order by SalesValue Desc
+Limit 3
+) Novo
+left join
+(
+Select City, a.Name, sum(OrderQty*UnitPrice) SalesValue
+from ProductCategory a
+join Product b on a.ProductCategoryID=b.ProductCategoryID
+join SalesOrderDetail c on c.ProductID=b.ProductID
+join SalesOrderHeader d on c.SalesOrderID=d.SalesOrderID
+join Customer e on d.CustomerID=e.CustomerID
+join CustomerAddress f on f.CustomerID=e.CustomerID
+join Address g on g.AddressID=f.AddressID
+group by City, Name
+Order by SalesValue Desc
+) Novo2
+on Novo.City=Novo2.City
+order by Novo.City, Novo2.SalesValue Desc 
+
+-- Result:
+City	Name	SalesValue
+London	Mountain Bikes	50881.99
+London	Mountain Frames	24018.80
+London	Road Bikes	5102.95
+London	Cranksets	1773.81
+London	Shorts	1072.14
+London	Derailleurs	638.85
+London	Pedals	390.32
+London	Bottom Brackets	388.73
+London	Handlebars	292.63
+London	Saddles	284.43
+London	Brakes	255.60
+London	Gloves	88.14
+London	Chains	36.42
+London	Helmets	20.99
+Union City	Road Bikes	53478.76
+Union City	Road Frames	10031.90
+Union City	Jerseys	1597.49
+Union City	Vests	904.95
+Union City	Helmets	721.69
+Union City	Pedals	490.73
+Union City	Hydration Packs	296.91
+Union City	Gloves	264.42
+Union City	Bike Racks	144.00
+Union City	Handlebars	72.16
+Union City	Caps	57.31
+Union City	Cleaners	38.16
+Union City	Bottles and Cages	29.90
+Union City	Tires and Tubes	8.22
+Union City	Socks	5.39
+Woolston	Touring Bikes	77040.15
+Woolston	Touring Frames	9430.95
+Woolston	Jerseys	1178.02
+Woolston	Vests	1108.19
+Woolston	Helmets	495.36
+Woolston	Bike Racks	432.00
+Woolston	Hydration Packs	296.91
+Woolston	Gloves	161.59
+Woolston	Saddles	63.16
+Woolston	Caps	53.90
+Woolston	Cleaners	38.16
+Woolston	Bottles and Cages	31.79
+Woolston	Tires and Tubes	10.96
+
+-- AdventureWorks resit questions
+
+-- 1.List the SalesOrderNumber for the customer 'Good Toys' 'Bike World'
+
+Select CompanyName, SalessOrderNumber 
+from SalesOrderHeader
+right join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+where CompanyName='Good Toys' or CompanyName='Bike World'
+
+-- Result:
+CompanyName	SalessOrderNu..
+Good Toys	SO71774
+Bike World	
+
+-- 2.List the ProductName and the quantity of what was ordered by 'Futuristic Bikes'
+
+select Product.Name, OrderQty
+from SalesOrderDetail
+join Product on SalesOrderDetail.ProductID=Product.ProductID
+join SalesOrderHeader on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+join Customer on SalesOrderHeader.CustomerID=Customer.CustomerID
+where CompanyName= 'Futuristic Bikes'
+
+-- Result:
+Name	OrderQty
+ML Mountain Seat/Saddle	2
+Long-Sleeve Logo Jersey, L	2
+Classic Vest, S	3
+
+select CompanyName, AddressLine1
+from Customer
+join CustomerAddress on Customer.CustomerID=CustomerAddress.CustomerID
+join Address on Address.AddressID=CustomerAddress.AddressID
+where CompanyName LIKE "%BIKE%" or CompanyName LIKE "%bike%" 
+
+select CompanyName, AddressLine1
+from Customer
+join CustomerAddress on Customer.CustomerID=CustomerAddress.CustomerID
+join Address on Address.AddressID=CustomerAddress.AddressID
+where CompanyName LIKE "%CYCLE%" or CompanyName LIKE "%cycle%" 
