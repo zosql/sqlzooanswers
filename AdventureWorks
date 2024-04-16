@@ -691,4 +691,22 @@ group by CompanyName
 order by sum(SubTotal+TaxAmt+Freight) Desc
 Limit 1
 
--- query 2 logic: Rank over partition
+-- query 2 logic: Rank over partition and SUCCESS!
+
+select Novo.CountyRegion, Novo.CompanyName, Novo.TOV
+from
+(
+select a.CountyRegion, c.CompanyName, sum(d.SubTotal+d.TaxAmt+d.Freight) TOV, rank() over(partition by a.CountyRegion order by sum(d.SubTotal+d.TaxAmt+d.Freight) Desc) RANK
+from Address a
+join CustomerAddress b on b.AddressID=a.AddressID
+join Customer c on c.CustomerID=b.CustomerID
+join SalesOrderHeader d on d.CustomerID=c.CustomerID
+group by c.CompanyName
+order by sum(d.SubTotal+d.TaxAmt+d.Freight) Desc
+) Novo
+where Novo.RANK=1
+
+-- Result:
+CountyRegion	CompanyName	TOV
+United Kingdom	Action Bicycle Specialists	119960.83
+United States	Eastside Department Store	92663.56
