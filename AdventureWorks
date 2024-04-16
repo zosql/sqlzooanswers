@@ -276,3 +276,97 @@ CustomerID	AddressLine1	AddressLine1
 165	2500 North Stemmons Freeway	
 201	Po Box 8035996	
 256	99828 Routh Street, Suite 825	
+
+-- 12.For each order show the SalesOrderID and SubTotal calculated three ways:
+A) From the SalesOrderHeader
+B) Sum of OrderQty*UnitPrice
+C) Sum of OrderQty*ListPrice
+
+Select distinct(SalesOrderHeader.SalesOrderID), SubTotal, sum(OrderQty*UnitPrice) STUP, sum(OrderQty*ListPrice) SLIP
+from SalesOrderHeader
+left join SalesOrderDetail on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+left join Product on SalesOrderDetail.ProductID=Product.ProductID
+group by SalesOrderID
+
+Result:
+SalesOrderID	SubTotal	STUP	SLIP
+71774	880.35	713.80	1189.66
+71776	78.81	63.90	106.50
+71780	38418.69	30600.81	56651.56
+71782	39785.33	33319.68	55533.31
+71783	83858.43	68141.99	121625.43
+71784	108561.83	90341.14	151932.58
+71796	57634.63	47848.02	79746.71
+71797	78029.69	65218.20	108986.40
+71815	1141.58	926.91	1544.86
+71816	3398.17	2847.37	4745.68
+71831	2016.34	1712.91	2854.91
+71832	35775.21	29187.03	50559.01
+71845	41622.05	34208.70	57768.21
+71846	2453.76	1929.58	3592.65
+71856	602.19	500.30	833.84
+71858	13823.71	11528.80	19214.74
+71863	3324.28	2778.20	4633.78
+71867	1059.31	858.90	1431.50
+71885	550.39	524.64	874.44
+71895	246.74	221.24	368.76
+71897	12685.89	10585.01	17641.75
+71898	63980.99	53248.57	88747.82
+71899	2415.67	1901.38	3545.67
+71902	74058.81	60526.52	106151.57
+71915	2137.23	1732.86	2888.15
+71917	40.90	37.73	62.93
+71920	2980.79	2527.08	4211.88
+71923	106.54	97.49	166.81
+71935	6634.30	5535.13	9229.27
+71936	98278.69	80142.85	138124.87
+71938	88812.86	5102.95	8504.95
+71946	38.95		
+
+-- 13.Show the best selling item by value.
+
+-- Query 1: shows top 10 best-selling items by sales value
+
+Select distinct(Product.ProductID), Product.Name, sum(OrderQty*UnitPrice) SaleValue, sum(OrderQty*UnitPrice)-sum(OrderQty*UnitPriceDiscount)-sum(OrderQty*StandardCost) NetProfit
+from SalesOrderHeader
+left join SalesOrderDetail on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+left join Product on SalesOrderDetail.ProductID=Product.ProductID
+group by Product.ProductID
+order by SaleValue Desc
+Limit 10
+
+-- Result:
+ProductID	Name	SaleValue	NetProfit
+969	Touring-1000 Blue, 60	37191.44	-1339.00
+783	Mountain-200 Black, 42	37178.73	3375.27
+782	Mountain-200 Black, 38	35801.74	3250.26
+976	Road-350-W Yellow, 48	33509.58	-6545.79
+957	Touring-1000 Yellow, 60	23745.32	-1447.90
+967	Touring-1000 Blue, 50	22887.04	-824.00
+780	Mountain-200 Silver, 42	20879.85	1895.55
+973	Road-350-W Yellow, 40	20411.80	-1238.40
+784	Mountain-200 Black, 46	19277.86	1750.14
+781	Mountain-200 Silver, 46	18095.87	1642.81
+
+-- Query 2 shows the top 10 best-selling items by profit value
+
+Select distinct(Product.ProductID), Product.Name, sum(OrderQty*UnitPrice) SaleValue, sum(OrderQty*UnitPrice)-sum(OrderQty*UnitPriceDiscount)-sum(OrderQty*StandardCost) ProfitValue
+from SalesOrderHeader
+left join SalesOrderDetail on SalesOrderDetail.SalesOrderID=SalesOrderHeader.SalesOrderID
+left join Product on SalesOrderDetail.ProductID=Product.ProductID
+group by Product.ProductID
+order by ProfitValue Desc
+Limit 10
+
+-- Result:
+ProductID	Name	SaleValue	ProfitValue
+783	Mountain-200 Black, 42	37178.73	3375.27
+782	Mountain-200 Black, 38	35801.74	3250.26
+780	Mountain-200 Silver, 42	20879.85	1895.55
+784	Mountain-200 Black, 46	19277.86	1750.14
+781	Mountain-200 Silver, 46	18095.87	1642.81
+779	Mountain-200 Silver, 38	15311.89	1390.07
+748	HL Mountain Frame - Silver, 38	13099.20	1144.00
+864	Classic Vest, S	2968.93	994.63
+743	HL Mountain Frame - Black, 42	9717.12	848.64
+876	Hitch Rack - 4-Bike	2088.00	786.48
