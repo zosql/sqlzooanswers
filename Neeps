@@ -27,4 +27,55 @@ Wednesday	16:00	co.LB42+LB46
 Thursday	10:00	co.LB42+LB46
 Wednesday	13:00	co.117+118
 
--- 
+-- 3.List the names of the staff who teach on module co72010.
+
+select distinct(name)
+from staff
+join teaches on staff.id=teaches.staff
+join event on teaches.event=event.id
+where modle='co72010'
+
+-- Result:
+name
+Cumming, Andrew
+Chisholm, Ken
+
+--4.Give a list of the staff and module number associated with events using room cr.132 on Wednesday, include the time each event starts.
+
+select name, modle, tod
+from staff
+join teaches on staff.id=teaches.staff
+join event on teaches.event=event.id
+where room='cr.132' and dow='Wednesday'
+
+-- Result:
+name	modle	tod
+Murray, Jim	co22009	12:00
+Varey, Alison	co32021	09:00
+
+-- 5.Give a list of the student groups which take modules with the word 'Database' in the name.
+
+select student.id, student.name, event.modle, modle.name
+from modle
+join event on event.modle=modle.id
+right join attends on attends.event=event.id
+right join student on attends.student=student.id
+where modle.name LIKE "%Database%"
+group by student.id
+
+-- Result:
+id	name	modle	name
+co4.CO	BSc4 Computing	co42009	Object Oriented Databases
+co4.ND	BEng4 Network and Distributing Systems	co42009	Object Oriented Databases
+com.IS	PgD Information Systems	co72010	Database systems
+com.IS.a	PgD Information Systems a (HCI)	co72010	Database systems
+com.IS.b	PgD Information Systems b (DS)	co72010	Database systems
+com.IS.d	PgD Information Systems d (BT)	co72010	Database systems
+com.IS.e	PgD Information Systems e (OOP)	co72010	Database systems
+com.IS.tu	PgD Information System pt. Tues	co72010	Database systems
+com.ITeC	PgD IT and e-Commerce	co72026	Very Large Databases
+com.ITeC.feb		co72010	Database systems
+com.ITeC.z3	PgD IT and e-Commerce eve sem 3	co72026	Very Large Databases
+com.SE	PgD Software Engineering	co72010	Database systems
+com.ST	PgD Software Technology	co72010	Database systems
+com.ST.tu	PgD Software Technology pt. Tues	co72010	Database systems
