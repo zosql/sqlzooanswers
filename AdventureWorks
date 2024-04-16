@@ -370,3 +370,68 @@ ProductID	Name	SaleValue	ProfitValue
 864	Classic Vest, S	2968.93	994.63
 743	HL Mountain Frame - Black, 42	9717.12	848.64
 876	Hitch Rack - 4-Bike	2088.00	786.48
+
+-- 14.Show how many orders are in the following ranges (in $):
+
+    RANGE      Num Orders      Total Value
+    0-  99
+  100- 999
+ 1000-9999
+10000-
+
+-- Query attempt 1: without the pivot of RANGES
+
+Select count(SalesOrderID) Num_Orders, sum(OrderQty*UnitPrice) Total_Value
+from SalesOrderDetail
+
+-- Result:
+Num_Orders	Total_Value
+500	644909.69
+
+-- Query attempt 2:
+-- will need to add another column of RANGE hence the way is to add a case when
+-- pivot break up must add up to the num_orders and total_value
+
+Select Novo.RANGE, Novo.Num_Orders, Novo.Total_Value
+from
+(
+Select 
+(case
+when sum(OrderQty*UnitPrice) between 0 and 99 then "0-99"
+when sum(OrderQty*UnitPrice) between 100 and 999 then "100-999"
+when sum(OrderQty*UnitPrice) between 1000 and 9999 then "1000-9999"
+when sum(OrderQty*UnitPrice) >=10000 then "10000+"
+else "Error"
+end) "RANGE", count(SalesOrderID) Num_Orders, sum(OrderQty*UnitPrice) Total_Value
+from SalesOrderDetail
+Group by SalesOrderID
+) Novo
+Group by Novo.RANGE
+
+-- Result: INCORRECT because total number of orders is higher than actual  and total valiue is not adding up
+RANGE	Num_Orders	Total_Value
+0-99	1	63.90
+100-999	2	713.80
+1000-9999	7	2847.37
+10000+	29	30600.81
+
+-- Query attempt 3: NAILED IT!
+-- Seeing there are only 31 distinct orderdetailids and sum is 644909.
+
+select Novo.RANGE, Count(Novo.Total_Value)"Num Orders", Sum(Novo.Total_Value)"Total Value"
+from
+(
+select 
+(case 
+when sum(OrderQty*UnitPrice) between 0 and 99 then "0-99"
+when sum(OrderQty*UnitPrice) between 100 and 999 then "100-999"
+when sum(OrderQty*UnitPrice) between 1000 and 9999 then "1000-9999"
+when sum(OrderQty*UnitPrice)>10000 then "10000-" 
+else "error" end) "RANGE", count(distinct(SalesOrderID))"Num_Orders", sum(OrderQty*UnitPrice) as "Total_Value"
+from SalesOrderDetail a
+group by SalesOrderID
+) Novo
+group by Novo.RANGE
+
+-- 15.Identify the three most important cities. Show the break down of top level product category against city.
+
