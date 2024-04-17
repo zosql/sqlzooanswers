@@ -200,3 +200,86 @@ Project
 Internet Multimedia
 Interactivity and the Internet
 
+-- 9.Identify those events which start at the same time as one of the co72010 lectures.
+
+-- query attempt 1
+select distinct(b.id)
+from event a
+join event b on a.tod=b.tod
+where a.modle='co72010'
+
+-- Result: WRONG and 170 in nos. issue is we only accounted for the tod and not the dow.
+id
+co12004.L01
+co12004.T01
+co12004.T03
+co12004.T04
+co12004.T05
+co12004.T06
+
+-- query attempt 2: No result!
+
+select b.id
+from event b
+join
+(
+select modle, concat(dow,"-",tod)dowtod
+from event a
+) Novo
+on b.concat(dow,"-",tod)=Novo.dowtod
+where Novo.modle='co72010'
+
+-- query attempt 3: Worked!
+
+select event.id
+from event
+where concat(dow,"-",tod) IN
+(select concat(dow,"-",tod)
+from event
+where modle='co72010')
+
+-- Result: 42 events in count
+id
+co12004.T04
+co12004.T05
+co12005.T01
+co12005.T04
+co12006.L03
+co12008.L01
+co12012.T01
+co22005.T02
+co22005.T04
+co22005.T07
+co22005.T08
+co22006.L02
+co22008.T03
+co22008.T04
+co22009.T02
+co32011.T03
+co32014.T01
+co32016.L01
+co32018.L01
+co32021.L01
+co42001.L01
+co42010.T01
+co42015.T01
+co72006.L01
+co72013.L01
+co72013.L02
+co72013.T01
+co72013.T02
+co72013.T03
+co72013.T04
+co72013.T05
+co72013.T06
+co72016.T01
+co72018.T01
+coh2451.T01
+coh8412555.L01
+coh8412555.T02
+coh8412585.T03
+coh8412605.L01
+coh8412605.T01
+coh8412615.T03
+coh8412615.T05
+
