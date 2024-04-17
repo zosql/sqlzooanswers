@@ -283,3 +283,140 @@ coh8412605.T01
 coh8412615.T03
 coh8412615.T05
 
+-- 10.How many members of staff have contact time which is greater than the average?
+
+-- Query 1: What is the avg?
+
+select avg(duration) as Avg
+from teaches
+join event on teaches.event=event.id
+
+-- Result:
+Avg
+1.5261
+
+-- Query 2: Contact time of each staff
+
+select staff, sum(duration) over(partition by staff) as Sum
+from teaches
+join event on teaches.event=event.id
+group by staff
+
+-- Result:
+staff	Sum
+co.ACg	2
+co.ACr	2
+co.AFA	2
+co.AL	1
+co.AMn	1
+co.ASc	2
+co.ASr	1
+co.AV	1
+co.BC	2
+co.CHt	2
+co.CM	2
+co.CMD	2
+co.EH	2
+co.FG	2
+co.GR	2
+co.GS	2
+co.IS	2
+co.JJ	1
+co.JKg	2
+co.JKy	2
+co.JMy	2
+co.JMz	2
+co.JO	2
+co.JSv	2
+co.KB	1
+co.KC	2
+co.LM	2
+co.MR	1
+co.MS	2
+co.PTr	2
+co.RB	1
+co.RK	1
+co.RR	2
+co.SL	2
+co.SM	1
+co.SRM	1
+co.SS	1
+co.ST	2
+co.TG	2
+co.TMc	2
+co.TMu	2
+co.TP	2
+co.XL	2
+co.ZZ1	2
+co.ZZ7	1
+co.ZZ8	1
+
+-- Query 3 is a combination of queries 1 & 2.
+
+select count(*)
+from
+(
+select staff, sum(duration) over(partition by staff) as Sum
+from teaches
+join event on teaches.event=event.id
+group by staff
+) Novo
+where Novo.Sum>(select avg(duration) as Avg
+from teaches
+join event on teaches.event=event.id
+)
+
+-- Result: WRONG according to peers.
+count(*)
+32
+
+-- Query 4: Each staff member's sum of duration
+
+select staff, sum(duration) T
+from teaches
+join event on teaches.event=event.id
+group by staff
+order by staff
+
+-- Query 5: Each staff member's avg of duration
+
+select avg(S)
+from
+(
+select staff, sum(duration) S
+from teaches
+join event on teaches.event=event.id
+group by staff
+order by staff
+) Novo
+
+-- Result:
+avg(S)
+8.2609
+
+-- Query 6: combo of result from the 5th query and input into the 4th query for Final RESULT!
+
+select count(*)
+from
+(
+select staff, sum(duration) T
+from teaches
+join event on teaches.event=event.id
+group by staff
+Having T>(select avg(S)
+from
+(
+select staff, sum(duration) S
+from teaches
+join event on teaches.event=event.id
+group by staff
+order by staff
+) Novo2
+)
+)Novo
+
+-- Result:
+count(*)
+17
+
+-- Neeps hard questions
