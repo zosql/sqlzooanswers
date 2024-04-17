@@ -79,3 +79,124 @@ com.ITeC.z3	PgD IT and e-Commerce eve sem 3	co72026	Very Large Databases
 com.SE	PgD Software Engineering	co72010	Database systems
 com.ST	PgD Software Technology	co72010	Database systems
 com.ST.tu	PgD Software Technology pt. Tues	co72010	Database systems
+
+-- Neeps: medium questions
+
+-- 6.Show the 'size' of each of the co72010 events. Size is the total number of students attending each event.
+
+select sum(sze)
+from student
+
+-- shows that there are total 2250 students
+
+select *
+from modle
+where id='co72010'
+
+-- final query
+
+select modle, event, sum(sze)
+from modle
+join event on modle.id=event.modle
+join attends on event.id=attends.event
+join student on student.id=attends.student
+where modle.id='co72010'
+group by event
+
+-- Result:
+modle	event	sum(sze)
+co72010	co72013.L01	215
+co72010	co72013.L02	10
+co72010	co72013.T01	40
+co72010	co72013.T02	49
+co72010	co72013.T03	10
+co72010	co72013.T04	45
+co72010	co72013.T05	35
+co72010	co72013.T06	29
+
+-- 7.For each post-graduate module, show the size of the teaching team. (post graduate modules start with the code co7).
+
+select modle, count(distinct(staff))
+from event
+join teaches on teaches.event=event.id
+where modle LIKE "co7%"
+group by model
+
+-- Result:
+modle	count(distinc..
+co72002	1
+co72003	2
+co72004	1
+co72005	2
+co72006	1
+co72010	2
+co72011	2
+co72012	1
+co72016	2
+co72017	1
+co72018	1
+co72021	1
+co72026	2
+co72033	1
+
+-- 8.Give the full name of those modules which include events taught for fewer than 10 weeks.
+
+-- Query attempt 1
+select distinct(modle.name)
+from modle
+join event on event.modle=modle.id
+where event.id NOT IN (
+select distinct(event)
+from occurs
+where week >= 10)
+
+-- Result: WRONG because it is missing "Internet Multimedia" due to some oversight
+name
+Languages and Algorithms
+Project
+Interactivity and the Internet
+
+-- Query attempt 2
+select name
+from modle
+left join event on event.modle=modle.id
+left join occurs on occurs.event=event.id
+where modle.id NOT IN 
+(
+select modle.id
+from modle
+left join event on event.modle=modle.id
+left join occurs on occurs.event=event.id
+where week >=10
+group by modle.id
+)
+and week is not NULL
+group by modle.name
+
+-- Result: WRONG because it is missing 3 module names now
+name
+Project
+
+-- Query 3 attempt is to simply count the number of times an event id repeats in occurs to check for the number of weeks it ran for.
+-- WORKED!
+
+select distinct(modle.name)
+from event
+join
+(
+select event, count(event) C
+from occurs
+group by event
+Having C <10
+order by C
+) Novo
+on event.id=Novo.event
+join modle on modle.id=event.modle
+
+-- Result:
+name
+Languages and Algorithms
+Project
+Internet Multimedia
+Interactivity and the Internet
+
