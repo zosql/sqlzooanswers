@@ -420,3 +420,52 @@ count(*)
 17
 
 -- Neeps hard questions
+
+-- 11.co.CHt is to be given all the teaching that co.ACg currently does. Identify those events which will clash.
+
+-- Query approach 1: find the occupied days and time blocks for each staff and then find the clashes
+
+-- Query 1 Part 1: staff co.ACg
+
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, addtime(c.tod,concat(c.duration,':00')) toe
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+where staff='co.ACg'
+order by dow, tod, toe
+
+-- Query 1 Part 2: staff co.CHt
+
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod, addtime(g.tod,concat(g.duration,':00')) toe 
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+where staff='co.CHt'
+order by dow, tod, toe
+
+-- Query 1 Part 3: JOIN on same dow and same wk id
+
+select Novo.staff, Novo2.staff, Novo.event, Novo2.event, Novo.dow, Novo2.dow, Novo.tod, Novo2.tod, Novo.toe, Novo2.toe
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod, addtime(g.tod,concat(g.duration,':00')) toe 
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+where staff='co.CHt'
+order by dow, tod, toe
+) Novo
+join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, addtime(c.tod,concat(c.duration,':00')) toe
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+where staff='co.ACg'
+order by dow, tod, toe
+) Novo2
+on Novo.id=Novo2.id and Novo.dow=Novo2.dow
