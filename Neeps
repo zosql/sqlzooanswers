@@ -1004,3 +1004,87 @@ Computing 1st Year	10:00	11:00	Wednesday	03-October-2018	St Margaret Hall	Comput
 Computing 1st Year	11:00	12:00	Wednesday	03-October-2018	St Margaret Hall	Applications Workshop
 Computing 1st Year	13:00	14:00	Wednesday	03-October-2018	St Margaret Hall	Computer Systems
 Computing 1st Year	10:00	11:00	Friday	05-October-2018	St Margaret Hall	Software Development 1B
+
+-- Neeps: resit questions
+
+-- 1.Give the day and the time of the event co72002.L01.
+
+select dow, tod
+from event
+where id='co72002.L01'
+
+-- Result:
+dow	tod
+Monday	10:00
+
+-- 2.For each event in module co72003 show the day, the time and the place.
+
+select id, dow, tod, room
+from event
+where modle='co72003'
+
+-- Result:
+id	dow	tod	room
+co72003.L01	Monday	14:00	cr.B12
+co72003.T01	Monday	16:00	co.LB42
+
+-- 3.List the id of the events taught by 'Chisholm, Ken'.
+
+select event.id
+from event
+join teaches on teaches.event=event.id
+join staff on staff.id=teaches.staff
+where staff.name= 'Chisholm, Ken'
+
+-- Result:
+id
+co22006.L01
+co22006.L02
+co22006.L03
+co22006.T01
+co22006.T02
+co72013.L01
+co72013.L02
+co72013.T01
+co72013.T02
+co72013.T06
+
+-- 4.List the staff who teach in cr.SMH.
+
+select distinct(staff.id), staff.name
+from event
+join teaches on teaches.event=event.id
+join staff on staff.id=teaches.staff
+where event.room= 'cr.SMH'
+order by staff.name
+
+-- Result:
+id	name
+co.KB	Barclay, Ken
+co.KC	Chisholm, Ken
+co.ACg	Cumming, Andrew
+co.FG	Greig, Frank
+co.CHt	Hastie, Colin
+co.JJ	Jackson, Jim
+co.RK	Kemmer, Rob
+co.AL	Lawson, Alistair
+co.CM	Macaulay, Catriona
+co.AMn	Maclean, Aileen
+co.TMc	McEwan, Tom
+co.SRM	Middleton, Steve
+co.IS	Smith, Ian
+co.MS	Smyth, Michael
+co.ASr	Soutar, Alastair
+co.ST	Turner, Susan
+
+-- 5.Show the total number of hours (over the whole semester) of classes for com.IS.a
+
+select sum(duration) "Total hours"
+from event e
+join attends a on a.event=e.id
+join occurs o on o.event=e.id
+where a.student='com.IS.a'
+
+-- Result:
+Total hours
+60
