@@ -971,47 +971,36 @@ co22007.T01	co22020.T04
 
 -- 15.Produce a timetable for a group of full time students for week 1
 
+-- query 1 attempt - additively keep adding required columns to the time table display one by one
 
-SELECT
-    e.tod AS Start_Time,
-    ADDTIME(e.tod, CONCAT(e.duration, ':00:00')) AS End_Time,
-    e.dow AS Day_of_Week,
-    CONCAT(m.id, ': ', m.name, ' - ', r.name) AS Event_Details,
-    DATE_ADD(w.wkstart, INTERVAL (CASE e.dow
-        WHEN 'Monday' THEN 0
-        WHEN 'Tuesday' THEN 1
-        WHEN 'Wednesday' THEN 2
-        WHEN 'Thursday' THEN 3
-        WHEN 'Friday' THEN 4
-        WHEN 'Saturday' THEN 5
-        WHEN 'Sunday' THEN 6
-    END) DAY) AS Event_Date
-FROM
-    event e
-JOIN
-    modle m ON e.modle = m.id
-JOIN
-    attends a ON e.id = a.event
-JOIN
-    occurs o ON e.id = o.event
-JOIN
-    room r ON e.room = r.id
-JOIN
-    week w ON o.week = w.id
-WHERE
-    a.student = 'co1.CO'  -- Replace this with the correct group ID
-    AND o.week = '01'  -- Week 1
-    AND e.tod BETWEEN '09:00' AND '20:00'
-GROUP BY
-    e.id, e.tod, e.dow, w.wkstart
-ORDER BY
-    CASE e.dow
-        WHEN 'Monday' THEN 1
-        WHEN 'Tuesday' THEN 2
-        WHEN 'Wednesday' THEN 3
-        WHEN 'Thursday' THEN 4
-        WHEN 'Friday' THEN 5
-        WHEN 'Saturday' THEN 6
-        WHEN 'Sunday' THEN 7
-    END,
-    e.tod;
+select stu.name Students, e.tod Start_time, concat((e.tod+e.duration),":00") End_time, dow Day, date_format(date_add(w.wkstart, INTERVAL 
+(
+case
+when dow='Monday' then 0
+when dow='Tuesday' then 1
+when dow='Wednesday' then 2
+when dow='Thursday' then 3
+when dow='Friday' then 4
+when dow='Saturday' then 5
+when dow='Saunday' then 6
+else "Error"
+end
+) 
+DAY),"%d-%M-%Y") "Date", r.name Classroom, m.name Module
+from student stu
+join attends a on stu.id=a.student
+join event e on e.id=a.event
+join occurs o on e.id=o.event
+join week w on w.id=o.week
+join modle m on m.id=e.modle
+join room r on r.id=e.room
+where w.id=01 and stu.id='co1.CO' -- this can be replaced with any full time student id
+order by Date, Start_time
+
+-- Result:
+Students	Start_time	End_time	Day	Date	Classroom	Module
+Computing 1st Year	14:00	15:00	Monday	01-October-2018	St Margaret Hall	Software Development 1B
+Computing 1st Year	10:00	11:00	Wednesday	03-October-2018	St Margaret Hall	Computer Systems
+Computing 1st Year	11:00	12:00	Wednesday	03-October-2018	St Margaret Hall	Applications Workshop
+Computing 1st Year	13:00	14:00	Wednesday	03-October-2018	St Margaret Hall	Computer Systems
+Computing 1st Year	10:00	11:00	Friday	05-October-2018	St Margaret Hall	Software Development 1B
