@@ -594,6 +594,48 @@ co.G75+G76	G75+G76	40
 -- occupancy level
 -- eg. sze/capacity*100
 
+-- Query attempt 2: out of 55 hours in a week of availability how much is the room used? and for every event the 200 size room has sum total how much utilization?
+
+select r.id Room, e.id Event, Capacity,sum(duration),concat(round(sum(duration)/(11*5)*100,0),"%") Utilisation, sum(sze),concat(round(sum(sze)/capacity*100,0),"%") Occupancy
+from room r
+Join event e on e.room=r.id 
+join attends a on a.event=e.id
+join student s on s.id=a.student
+group by r.id, e.id
+Having Capacity >60
+
+-- Result: event-wise breakdown
+Room	Event	Capacity	sum(duration)	Utilisation	sum(sze)	Occupancy
+cr.SMH	co12004.L01	200	3	5%	205	103%
+cr.SMH	co12005.L01	200	2	4%	152	76%
+cr.SMH	co12005.L02	200	1	2%	150	75%
+cr.SMH	co12006.L01	200	1	2%	150	75%
+cr.SMH	co12006.L03	200	1	2%	150	75%
+cr.SMH	co22005.L01	200	6	11%	130	65%
+cr.SMH	co22007.L01	200	6	11%	135	68%
+cr.SMH	co32011.L01	200	5	9%	77	39%
+cr.SMH	co42019.L01	200	6	11%	92	46%
+cr.SMH	co72011.L01	200	6	11%	152	76%
+cr.SMH	co72013.L01	200	8	15%	215	108%
+cr.SMH	co72021.L01	200	2	4%	35	18%
+cr.SMH	co72023.L01	200	8	15%	177	89%
+cr.SMH	coh8412585.L01	200	1	2%	80	40%
+
+-- query attempt 3: removed event-level break up
+
+select r.id Room, Capacity,sum(duration),concat(round(sum(duration)/(11*5)*100,0),"%") Utilisation, sum(sze),concat(round(sum(sze)/(count(distinct(e.id))*capacity)*100),"%") Occupancy
+from room r
+Join event e on e.room=r.id 
+join attends a on a.event=e.id
+join student s on s.id=a.student
+group by r.id
+Having Capacity >60
+
+-- Result: In a 55 hour week the room is booked for 56 hours of events total sum of students occupying the room is 68%
+Room	Capacity	sum(duration)	Utilisation	sum(sze)	Occupancy
+cr.SMH	200	56	102%	1900	68%
+
+
 -- 13.A one hour staff meeting is to be held between 09:00 and 17:00. Events which clash are to be cancelled. Identify the hour which will result in the least disruption.
 
 -- query 1 logic:
