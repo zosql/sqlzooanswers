@@ -597,13 +597,115 @@ co.G75+G76	G75+G76	40
 -- 13.A one hour staff meeting is to be held between 09:00 and 17:00. Events which clash are to be cancelled. Identify the hour which will result in the least disruption.
 
 -- query 1 logic:
--- identify the count of events every tod and dow
+-- identify the count of events every tod and dow. to find the least and corresponding disruption.
 
 select tod, tod+duration toe, dow, count(distinct(id)) Events
 from event
 group by tod, toe, dow
 Having tod between '09:00' and '16:00'
 Order by Events
+
+-- Result:
+tod	toe	dow	Events
+09:00	10	Monday	1
+12:00	14	Wednesday	1
+16:00	18	Thursday	1
+11:00	13	Wednesday	1
+16:00	17	Wednesday	1
+09:00	10	Thursday	1
+10:00	11	Tuesday	1
+14:00	15	Friday	1
+10:00	12	Wednesday	1
+16:00	18	Monday	1
+09:00	11	Friday	1
+10:00	12	Monday	1
+14:00	15	Wednesday	1
+16:00	17	Tuesday	2
+09:00	10	Tuesday	2
+16:00	18	Wednesday	2
+10:00	11	Wednesday	2
+11:00	12	Friday	2
+14:00	16	Thursday	2
+12:00	13	Monday	2
+16:00	17	Monday	2
+13:00	15	Wednesday	2
+16:00	18	Tuesday	2
+13:00	15	Friday	2
+11:00	13	Friday	2
+12:00	13	Friday	2
+16:00	17	Friday	2
+12:00	14	Thursday	2
+13:00	14	Tuesday	2
+10:00	11	Friday	2
+11:00	13	Tuesday	3
+13:00	14	Monday	3
+13:00	15	Monday	3
+09:00	11	Monday	3
+13:00	14	Wednesday	3
+14:00	16	Friday	3
+15:00	16	Thursday	3
+15:00	17	Wednesday	3
+13:00	14	Thursday	3
+10:00	12	Friday	3
+14:00	15	Thursday	3
+11:00	13	Thursday	3
+12:00	13	Thursday	3
+16:00	17	Thursday	3
+13:00	14	Friday	3
+09:00	11	Thursday	3
+14:00	16	Monday	3
+11:00	12	Tuesday	3
+15:00	17	Tuesday	4
+12:00	13	Tuesday	4
+Results truncated. Only the first 50 rows have been shown.
+
+-- query 2 logic. Assuming least disruption means, least number of affected students and least by affected duration.
+
+-- Via visual inspection it seems that Tue 13 to 14 there is 1 event with 22 size.
+
+select concat(tod,"-",dow)TD, tod+duration toe,duration, sum(sze) Attendants, count(distinct(event.id)) EventCount
+from event
+join attends on event.id=attends.event
+join student on student.id=attends.student
+where tod between '09:00' and '16:00'
+group by TD,duration
+Order by Attendants,EventCount
+
+-- Result: the query has been updated to order rows by attendants and eventcount for easy visual inspection and limiting display of rows.
+TD	toe	duration	Attendants	EventCount
+16:00-Monday	18	2	20	1
+09:00-Friday	11	2	20	1
+10:00-Wednesday	12	2	20	1
+13:00-Tuesday	14	1	22	1
+10:00-Monday	12	2	25	1
+14:00-Friday	15	1	25	1
+16:00-Tuesday	18	2	25	2
+09:00-Monday	10	1	30	1
+09:00-Thursday	10	1	30	1
+...
+...
+...
+-- what is needed now is to filter the resultants table with duration = 1
+
+-- query 3 - for Final Result
+
+select TD, duration, Attendants, EventCount
+from
+(
+select concat(tod,"-",dow)TD, tod+duration toe,duration, sum(sze) Attendants, count(distinct(event.id)) EventCount
+from event
+join attends on event.id=attends.event
+join student on student.id=attends.student
+where tod between '09:00' and '16:00'
+group by TD,duration
+Order by Attendants,EventCount
+) Novo
+where duration=1
+Limit 1
+
+-- Result:
+TD	duration	Attendants	EventCount
+13:00-Tuesday	1	22	1
 
 
 -- 14.Find all clashes - include the events which clash and the staff, student or rooms that they have in common.
@@ -824,3 +926,6 @@ co42010.L01	co72023.T02
 -- Room Common Result:
 E	E2
 co22007.T01	co22020.T04
+
+-- 15.Produce a timetable for a group of full time students for week 1
+
