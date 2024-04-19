@@ -971,3 +971,47 @@ co22007.T01	co22020.T04
 
 -- 15.Produce a timetable for a group of full time students for week 1
 
+
+SELECT
+    e.tod AS Start_Time,
+    ADDTIME(e.tod, CONCAT(e.duration, ':00:00')) AS End_Time,
+    e.dow AS Day_of_Week,
+    CONCAT(m.id, ': ', m.name, ' - ', r.name) AS Event_Details,
+    DATE_ADD(w.wkstart, INTERVAL (CASE e.dow
+        WHEN 'Monday' THEN 0
+        WHEN 'Tuesday' THEN 1
+        WHEN 'Wednesday' THEN 2
+        WHEN 'Thursday' THEN 3
+        WHEN 'Friday' THEN 4
+        WHEN 'Saturday' THEN 5
+        WHEN 'Sunday' THEN 6
+    END) DAY) AS Event_Date
+FROM
+    event e
+JOIN
+    modle m ON e.modle = m.id
+JOIN
+    attends a ON e.id = a.event
+JOIN
+    occurs o ON e.id = o.event
+JOIN
+    room r ON e.room = r.id
+JOIN
+    week w ON o.week = w.id
+WHERE
+    a.student = 'co1.CO'  -- Replace this with the correct group ID
+    AND o.week = '01'  -- Week 1
+    AND e.tod BETWEEN '09:00' AND '20:00'
+GROUP BY
+    e.id, e.tod, e.dow, w.wkstart
+ORDER BY
+    CASE e.dow
+        WHEN 'Monday' THEN 1
+        WHEN 'Tuesday' THEN 2
+        WHEN 'Wednesday' THEN 3
+        WHEN 'Thursday' THEN 4
+        WHEN 'Friday' THEN 5
+        WHEN 'Saturday' THEN 6
+        WHEN 'Sunday' THEN 7
+    END,
+    e.tod;
