@@ -469,3 +469,358 @@ where staff='co.ACg'
 order by dow, tod, toe
 ) Novo2
 on Novo.id=Novo2.id and Novo.dow=Novo2.dow
+
+-- Query 2: cross join then apply two conditions where Novo.tod<Novo2.tod and Novo.toe>Novo2.tod or Novo.tod>Novo2.tod and Novo2.toe>Novo.tod
+-- Query 1 didnt work because the left or right join removed required rows unnecessarily hence needed to cross-join
+
+select Novo3.E CHt, Novo3.E2 ACg
+from
+(
+select Novo.staff S, Novo2.staff S2, Novo.id I, Novo2.id I2, Novo.event E, Novo2.event E2, Novo.dow D, Novo2.dow D2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe 
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+where staff='co.CHt'
+order by dow, tod, toe
+) Novo
+cross join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+where staff='co.ACg'
+order by dow, tod, toe
+) Novo2
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod))
+)Novo3
+Limit 2
+
+-- Result: missing 1 overlapping event
+CHt	ACg
+co12005.T03	co12005.T01
+co12005.T03	co72013.T03
+
+-- Because every week id 01, 02, 03 except 09 only 2 events actually clash as per visual inspection.
+-- double checking the results of https://github.com/keilorg/sqlzoo-solutions/blob/main/17%20University%20Timetables%2C%20Neeps.sql
+-- ie. Result: 
+cht_id	acg_id
+co12005.T03	co12005.T01
+co12005.T03	co72013.L02
+co12005.T03	co72013.T03
+-- double checking the results of https://github.com/HaminKo/SQLZoo-Solutions/blob/master/SQLZOO_Neeps_Answers.sql
+-- ie. Result:
+id	id
+co12005.T03	co12005.T01 -- covered
+co12005.T03	co72013.L02 -- covered 
+co72006.T01	co42010.T01 -- check
+co72021.T01	co72013.L01 -- check
+co72021.L01	co72013.L01 -- repeat
+
+-- Overlap of timeslots is clashing. What is overlap?
+-- ST2>=ST1 and ST2<ET1
+-- ST1>=ST2 and ST1<ET2
+
+-- Query 3 - my query 2 definitely had a logic gap of start times could be == and either of the staff's events could be before the other
+
+select Novo3.E CHt, Novo3.E2 ACg
+from
+(
+select Novo.staff S, Novo2.staff S2, Novo.id I, Novo2.id I2, Novo.event E, Novo2.event E2, Novo.dow D, Novo2.dow D2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe 
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+where staff='co.CHt'
+order by dow, tod, toe
+) Novo
+cross join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+where staff='co.ACg'
+order by dow, tod, toe
+) Novo2
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod))
+)Novo3
+Limit 3
+
+-- Result: matches the results of keilorg!
+CHt	ACg
+co12005.T03	co12005.T01
+co12005.T03	co72013.L02
+co12005.T03	co72013.T03
+
+-- From HaminKO's result needed to check these events:
+-- co72006.T01	with co42010.T01 	co72013.L02 co72013.T05-- checked -- haminko got this clashing pair wrong
+-- co72021.T01	co72013.L01 -- checked -- ditto
+	
+-- 12.Produce a table showing the utilisation rate and the occupancy level for all rooms with a capacity more than 60.
+
+-- query attempt 1 to find rooms with cap >60
+
+select *
+from room
+where capacity>60
+
+-- Result: Only 1 room has cap >60
+id	name	capacity	parent
+cr.SMH	St Margaret Hall	200	
+
+-- Desc order check confirms this
+-- Result:
+id	name	capacity	parent
+cr.SMH	St Margaret Hall	200	
+co.LB42+LB46	LB42+LB46	40	
+co.G78+G82	G78+G82	40	
+co.G75+G76	G75+G76	40	
+
+-- utilization rate
+-- eg. avg 5 hours per day or 3 hours on Monday, 4 hours on Tuesday, etc
+
+-- occupancy level
+-- eg. sze/capacity*100
+
+-- 13.A one hour staff meeting is to be held between 09:00 and 17:00. Events which clash are to be cancelled. Identify the hour which will result in the least disruption.
+
+-- query 1 logic:
+-- identify the count of events every tod and dow
+
+select tod, tod+duration toe, dow, count(distinct(id)) Events
+from event
+group by tod, toe, dow
+Having tod between '09:00' and '16:00'
+Order by Events
+
+
+-- 14.Find all clashes - include the events which clash and the staff, student or rooms that they have in common.
+
+-- Query attempt 1: gives the result but several rows are repeated as ditto.
+Select I,I2, D, D2, TS1, TE1, TS2, TE2, E, E2, S, S2, Stu1, Stu2, R1, R2, Clash_Of
+from
+(
+Select I,I2, D, D2, TS1, TE1, TS2, TE2, E, E2, S, S2, Stu1, Stu2, R1, R2,
+(
+case
+when S=S2 then "Staff"
+when Stu1=Stu2 then "Student"
+when R1=R2 then "Room"
+else "No Clash"
+end
+) 'Clash_Of'
+from
+(
+select Novo.id I, Novo2.id I2, Novo.dow D, Novo2.dow D2, Novo.event E, Novo2.event E2, Novo.staff S, Novo2.staff S2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2, Novo.student Stu1, Novo2.student Stu2, Novo.room R1, Novo2.room R2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe, r.student, g.room
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+join attends r on r.event=g.id 
+order by e.id
+) Novo
+cross join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe, s.student, c.room
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+join attends s on s.event=c.id
+order by a.id
+) Novo2
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod)) and Novo.event<>Novo2.event
+) Novo3
+) Novo4
+where Clash_Of<>"No Clash"
+
+-- getting 240 rows that are clashing due to reasons of staff, students or room clash but clashed events info seem to be repeating in the resultant dataset
+- Hence grouping by E and E2: only 8 rows remain as 2 room and 6 staff conflicts and 0 student conflicts. by adding code -- Group by E, E2
+
+-- Result: WRONG! Because as can be seen, Friday rows are the same pair of clashing events!
+I	I2	D	D2	TS1	TE1	TS2	TE2	E	E2	S	S2	Stu1	Stu2	R1	R2	Clash_Of
+01	01	Tuesday	Tuesday	11:00	13	12:00	13	co12005.T01	co42010.T01	co.ACg	co.ACg	co1.CO.a	co4.SE	co.G78+G82	cr.G90+116	Staff
+01	01	Tuesday	Tuesday	11:00	13	11:00	12	co12005.T01	co72013.T03	co.ACg	co.ACg	co1.CO.a	com.IS.tu	co.G78+G82	co.G75+G76	Staff
+01	01	Friday	Friday	11:00	13	11:00	13	co22007.T01	co22020.T04	co.TMc	co.AFA	co2.CO.a	co2.NT.Ed	co.LB47	co.LB47	Room
+01	01	Friday	Friday	11:00	13	11:00	13	co22020.T04	co22007.T01	co.AFA	co.TMc	co2.NT.Ed	co2.CO.a	co.LB47	co.LB47	Room
+01	01	Thursday	Thursday	15:00	17	16:00	17	co42010.L01	co72023.T02	co.ACg	co.ACg	co4.CO	com.MM.b	cr.132	co.B7	Staff
+01	01	Tuesday	Tuesday	12:00	13	11:00	13	co42010.T01	co12005.T01	co.ACg	co.ACg	co4.SE	co1.CO.a	cr.G90+116	co.G78+G82	Staff
+01	01	Tuesday	Tuesday	11:00	12	11:00	13	co72013.T03	co12005.T01	co.ACg	co.ACg	com.IS.tu	co1.CO.a	co.G75+G76	co.G78+G82	Staff
+01	01	Thursday	Thursday	16:00	17	15:00	17	co72023.T02	co42010.L01	co.ACg	co.ACg	com.MM.b	co4.CO	co.B7	cr.132	Staff
+
+-- Query attempt 2 was focused on eliminating the duplicacy of cross join by using inner join of the Novo/Novo2 tables on T1.id<T2.id
+
+Select I,I2, D, D2, TS1, TE1, TS2, TE2, E, E2, S, S2, Stu1, Stu2, R1, R2, Clash_Of
+from
+(
+Select I,I2, D, D2, TS1, TE1, TS2, TE2, E, E2, S, S2, Stu1, Stu2, R1, R2,
+(
+case
+when S=S2 then "Staff"
+when Stu1=Stu2 then "Student"
+when R1=R2 then "Room"
+else "No Clash"
+end
+) 'Clash_Of'
+from
+(
+select Novo.id I, Novo2.id I2, Novo.dow D, Novo2.dow D2, Novo.event E, Novo2.event E2, Novo.staff S, Novo2.staff S2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2, Novo.student Stu1, Novo2.student Stu2, Novo.room R1, Novo2.room R2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe, r.student, g.room
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+join attends r on r.event=g.id 
+order by e.id
+) Novo
+inner join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe, s.student, c.room
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+join attends s on s.event=c.id
+order by a.id
+) Novo2
+on Novo.event<Novo2.event
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod))
+) Novo3
+) Novo4
+where Clash_Of<>"No Clash"
+Group by E, E2
+
+-- Result: appears correct!
+I	I2	D	D2	TS1	TE1	TS2	TE2	E	E2	S	S2	Stu1	Stu2	R1	R2	Clash_Of
+01	01	Tuesday	Tuesday	11:00	13	12:00	13	co12005.T01	co42010.T01	co.ACg	co.ACg	co1.CO.a	co4.SE	co.G78+G82	cr.G90+116	Staff
+01	01	Tuesday	Tuesday	11:00	13	11:00	12	co12005.T01	co72013.T03	co.ACg	co.ACg	co1.CO.a	com.IS.tu	co.G78+G82	co.G75+G76	Staff
+01	01	Friday	Friday	11:00	13	11:00	13	co22007.T01	co22020.T04	co.TMc	co.AFA	co2.CO.a	co2.NT.Ed	co.LB47	co.LB47	Room
+01	01	Thursday	Thursday	15:00	17	16:00	17	co42010.L01	co72023.T02	co.ACg	co.ACg	co4.CO	com.MM.b	cr.132	co.B7	Staff
+
+-- Now 120 rows remain
+-- Removed grouping by E, E2, etc because the rows get bunched to check and it seems like it works!
+
+-- Cleaned query 3 to display what is asked in the answer
+
+-- 14.Find all clashes - include the events which clash and the staff, student or rooms that they have in common.
+
+Select E, E2, Clash_Of,
+(
+case
+when Clash_Of="Staff" then S
+when Clash_Of="Student" then Stu1
+when Clash_Of="Room" then R1
+else "No_Clash"
+end
+) Common
+from
+(
+Select I,I2, D, D2, TS1, TE1, TS2, TE2, E, E2, S, S2, Stu1, Stu2, R1, R2,
+(
+case
+when S=S2 then "Staff"
+when Stu1=Stu2 then "Student"
+when R1=R2 then "Room"
+else "No Clash"
+end
+) 'Clash_Of'
+from
+(
+select Novo.id I, Novo2.id I2, Novo.dow D, Novo2.dow D2, Novo.event E, Novo2.event E2, Novo.staff S, Novo2.staff S2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2, Novo.student Stu1, Novo2.student Stu2, Novo.room R1, Novo2.room R2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe, r.student, g.room
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+join attends r on r.event=g.id 
+order by e.id
+) Novo
+inner join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe, s.student, c.room
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+join attends s on s.event=c.id
+order by a.id
+) Novo2
+on Novo.event<Novo2.event
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod))
+) Novo3
+) Novo4
+where Clash_Of<>"No Clash"
+Group by E, E2
+Order By I, D Desc
+
+-- Result:
+E	E2	Clash_Of	Common
+co12005.T01	co72013.T03	Staff	co.ACg
+co12005.T01	co42010.T01	Staff	co.ACg
+co42010.L01	co72023.T02	Staff	co.ACg
+co22007.T01	co22020.T04	Room	co.LB47
+
+-- Double check query 1 when Staff is Common
+
+select E, E2
+from
+(
+select Novo.id I, Novo2.id I2, Novo.dow D, Novo2.dow D2, Novo.event E, Novo2.event E2, Novo.staff S, Novo2.staff S2, Novo.tod TS1, Novo.toe TE1, Novo2.tod TS2,  Novo2.toe TE2, Novo.student Stu1, Novo2.student Stu2, Novo.room R1, Novo2.room R2
+from
+(
+select staff, f.event, e.id, date_format(e.wkstart,'%Y-%m-%d'), g.dow, g.tod,(g.tod+g.duration) toe, r.student, g.room
+from week e
+join occurs f on f.week=e.id
+join event g on g.id=f.event
+join teaches h on h.event=f.event
+join attends r on r.event=g.id 
+order by e.id
+) Novo
+inner join
+(
+select staff, b.event, a.id, date_format(a.wkstart,'%Y-%m-%d'), c.dow, c.tod, (c.tod+c.duration) toe, s.student, c.room
+from week a
+join occurs b on b.week=a.id
+join event c on c.id=b.event
+join teaches d on d.event=b.event
+join attends s on s.event=c.id
+order by a.id
+) Novo2
+on Novo.event<Novo2.event
+where Novo.id=Novo2.id and Novo.dow=Novo2.dow 
+and ((Novo2.tod<Novo.toe and Novo.tod<=Novo2.tod) OR (Novo.tod<Novo2.toe and Novo2.tod<=Novo.tod))
+) Novo3
+where S=S2 -- no student conflict and 1 room conflict as expected
+Group by E, E2
+
+-- Staff Common Result: Perfect as expected
+E	E2
+co12005.T01	co42010.T01
+co12005.T01	co72013.T03
+co42010.L01	co72023.T02
+
+-- Room Common Result:
+E	E2
+co22007.T01	co22020.T04
