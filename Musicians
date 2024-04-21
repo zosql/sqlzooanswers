@@ -1,1 +1,417 @@
+-- Tables used in the musicians database.
+-- There are 10 tables but no ER Diagram is shared.
+-- We will have to build our own ER Diagram.
+
+-- Musicians: easy questions
+
+-- 1.Give the organiser's name of the concert in the Assembly Rooms after the first of Feb, 1997.
+
+select m_name, concert_venue, con_date
+from musician
+join concert on musician.m_no=concert.concert_orgniser
+where concert_venue="Assembly Rooms" and con_date > "1997-02-01"
+
+-- Result:
+m_name	concert_venue	con_date
+James Steeple	Assembly Rooms	Sat, 20 Sep 1997 00:00:00 GMT
+
+-- 2.Find all the performers who played guitar or violin and were born in England.
+
+select m_name, instrument, place_country
+from musician
+join performer on musician.m_no=performer.perf_is
+join place on place.place_no=musician.born_in
+where (instrument= 'guitar' or instrument = 'violin')
+and place_country='England'
+order by m_name, instrument
+
+-- Result:
+m_name	instrument	place_country
+Alan Fluff	violin	England
+Davis Heavan	guitar	England
+Harriet Smithson	violin	England
+Harry Forte	violin	England
+James First	violin	England
+Theo Mengel	violin	England
+
+-- 3.List the names of musicians who have conducted concerts in USA together with the towns and dates of these concerts.
+
+select m_name Musician, place_country Country, place_town Town, date_format(con_date,"%Y-%m-%d") Date
+from musician
+join concert on musician.m_no=concert.concert_orgniser
+join place on place.place_no=concert.concert_in
+where place_country='USA'
+
+-- Result:
+Musician	Country	Town	Date
+James Steeple	USA	New York	1997-06-15
+
+-- 4.How many concerts have featured at least one composition by Andy Jones? List concert date, venue and the composition's title.
+
+-- query attempt 1: progressively written
+
+select count(concert_no) Count, Coalesce(con_date,"NA") Date, coalesce(concert_venue, "NA") Venue , c_title, m_name
+from composition
+left join has_composed on has_composed.cmpn_no= composition.c_no -- checked
+left join composer on composer.comp_no=has_composed.cmpr_no -- checked
+left join musician on musician.m_no=composer.comp_is -- checked
+left join concert on musician.m_no=concert.concert_orgniser -- this is a mistake to assume that only when the conductor is the same as composer the composition can be played.
+where m_name="Andy Jones"
+
+-- Result:
+Count	Date	Venue	c_title	m_name
+0	NA	NA	A Simple Piece	Andy Jones
+
+-- query attempt 2: need to join concert but on what?
+
+select count(distinct(concert_no)) Count,date_format(con_date,"%d-%M-%Y") Date, concert_venue Venue, c_title Title
+from musician m
+right join composer c on m.m_no=c.comp_is
+right join has_composed hc on hc.cmpr_no=c.comp_no
+right join composition cpsn on cpsn.c_no=hc.cmpn_no
+right join band b on b.band_no=cpsn.c_in
+right join performance perf on perf.gave=b.band_no
+right join concert crt on crt.concert_no=perf.performed_in
+where m_name="Andy Jones"
+
+-- Result:
+Count	Date	Venue	Title
+1	08-May-1996	Bridgewater Hall	A Simple Piece
+
+-- answer does not match the query of: https://github.com/ValeCV/SQLZOO-Solutions-2021/blob/main/SQLZOO%20-%20solutions.sql
+-- query of ValeCV
+ SELECT date_format(con_date,'%Y-%m-%d') as date, concert_venue, c_title -- ok
+   FROM musician -- ok
+      JOIN composer -- ok 
+         on (m_no = comp_is) -- ok
+      JOIN has_composed -- ok
+         on (comp_no=cmpr_no) -- ok 
+      JOIN composition -- ok
+         on (cmpn_no=c_no) -- ok
+      JOIN performance -- ok
+         on (c_no=performed) -- NOT OKAY
+      JOIN concert -- ok
+         on (performed_in = concert_no) -- ok
+   WHERE m_name = 'Andy Jones' -- ok
+-- not even of https://www.coursehero.com/file/17087169/Musicians-easy-questions-SQLZOO/ (this seems wrong for obvious reasons)
+-- obvious reasons being ERD mistake of combining musician<>living_in,place<>composition_in
+-- hence triple check
+-- Result:
+date	concert_venue	c_title
+1997-06-15	Metropolitan	A Simple Piece
+
+-- query attempt 3 - a more conscious left joining of the tables to go from musician to composition.
+
+select band_no, concert_venue, con_date
+from performance p
+left join concert c on p.performed_in=c.concert_no
+left join band b on b.band_no=p.gave
+order by band_no
+
+Result:
+band_no	concert_venue	con_date
+1	Bridgewater Hall	Wed, 08 May 1996 00:00:00 GMT
+1	Bridgewater Hall	Fri, 06 Jan 1995 00:00:00 GMT
+1	Bridgewater Hall	Fri, 06 Jan 1995 00:00:00 ...
+
+select band_no, m_name, c_title
+from musician m
+left join composer c on m.m_no=c.comp_is
+left join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cptn on hc.cmpn_no=cptn.c_no
+left join band b on cptn.c_in=b.band_no
+where m.m_name="Andy Jones"
+order by band_no
+
+Result:
+band_no	m_name	c_title
+2	Andy Jones	A Simple Piece
+
+select Novo2.concert_venue, Novo2.con_date, Novo.c_title
+from
+(
+select band_no, concert_venue, con_date
+from performance p
+left join concert c on p.performed_in=c.concert_no
+left join band b on b.band_no=p.gave
+order by band_no
+) Novo2
+join
+(
+select band_no, m_name, c_title
+from musician m
+left join composer c on m.m_no=c.comp_is
+left join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cptn on hc.cmpn_no=cptn.c_no
+left join band b on cptn.c_in=b.band_no
+order by band_no
+) Novo
+on Novo2.band_no=Novo.band_no
+where Novo.m_name="Andy Jones"
+Limit 1
+
+Result:
+concert_venue	con_date	c_title
+Bridgewater Hall	Wed, 08 May 1996 00:00:00 GMT	A Simple Piece
+
+-- query attempt 4 - since already tried joining performance and composition via band which could very well be that composition in 9 places vs 9 bands.
+-- taking another approach of assuming that from the performance table, for every perf no, 
+-- there is a band that "gave" that performance by having "performed" a composition, performed in a "concert"
+-- so perf table can directly be joined with Novo on c_no but it seems really stupied that c_no = performed = comp_no
+
+select con_date, concert_venue, c_title
+from musician m
+left join composer c on m.m_no=c.comp_is
+left join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cptn on hc.cmpn_no=cptn.c_no
+left join performance p on p.performed=cptn.c_no
+left join concert cct on cct.concert_no = p.performed_in
+where m.m_name="Andy Jones"
+order by m_no
+
+-- Result: this matches ValeCV assumption however really they should have given the ERD!
+con_date	concert_venue	c_title
+Sun, 15 Jun 1997 00:00:00 GMT	Metropolitan	A Simple Piece
+
+-- 5.list the different instruments played by the musicians and avg number of musicians who play the instrument.
+
+-- query attempt 1: went with the flow
+
+select instrument,round(avg(count(m_name)) over(partition by instrument)) Players
+from performer
+join musician on musician.m_no=performer.perf_is
+group by instrument
+order by Players Desc
+
+-- Result:
+instrument	Players
+violin	7
+viola	4
+bass	3
+cello	3
+flute	2
+guitar	2
+drums	2
+banjo	1
+trombone	1
+cornet	1
+horn	1
+trumpet	1
+clarinet	1
+
+-- result matches that of https://github.com/LalitTyagi/New-Onboards-Training-Solution/blob/master/SQL/ProblemSet05.sql
+
+-- query attempt 2: easier than getting confused with the wordings of the question around "avg number"
+
+select instrument, count(distinct(m_name)) Player
+from performer
+join musician on musician.m_no=performer.perf_is
+group by instrument
+order by Player Desc
+
+-- Result: ditto as before
+instrument	Player
+violin	7
+viola	4
+bass	3
+cello	3
+drums	2
+flute	2
+guitar	2
+clarinet	1
+cornet	1
+horn	1
+trombone	1
+trumpet	1
+banjo	1
+
+-- Musicians: medium questions
+
+-- 6.List the names, dates of birth and the instrument played of living musicians who play a instrument which Theo also plays.
+
+select m_name Name, date_format(born,"%d-%m-%Y") "Date of birth", Group_Concat(" ",Instrument) Instrument
+from musician m
+left join performer p on m.m_no=p.perf_is
+where m.m_name not LIKE "Theo%" and died is Null and instrument IN (select instrument from musician mu left join performer pe on mu.m_no=pe.perf_is where mu.m_name LIKE "Theo%")
+group by m_name
+order by m_name, instrument
+
+-- Result:
+Name	Date of birth	Instrument
+Harry Forte	28-02-1951	violin, drums
+James First	10-06-1965	violin
+Jeff Dawn	12-12-1945	violin
+John Smith	03-03-1950	violin
+
+-- 7.List the name and the number of players for the band whose number of players is greater than the average number of players in each band.
+
+select band_name Band, group_concat(distinct(m_name) order by m_name separator ", ") Players, count(distinct(m_name)) Size
+from plays_in pi
+left join band b on pi.band_id=b.band_no
+left join performer p on p.perf_no=pi.player
+left join musician m on m.m_no=p.perf_is
+group by band_name
+having count(distinct(m_name))>
+(select avg(players)
+from
+(
+select band_name, count(distinct(m_name)) players
+from plays_in pi
+left join band b on pi.band_id=b.band_no
+left join performer p on p.perf_no=pi.player
+left join musician m on m.m_no=p.perf_is
+group by band_name
+) Novo) 
+
+Result:
+Band	Players	Size
+AASO	Davis Heavan, Elsie James, Harry Forte, James Quick, Jeff Dawn, John Smith, Theo Mengel	7
+Oh well	Alan Fluff, Davis Heavan, Elsie James, Harry Forte, John Smith	5
+ROP	Alan Fluff, Davis Heavan, Elsie James, Harry Forte, James Quick, John Smith, Theo Mengel	7
+
+-- 8.List the names of musicians who both conduct and compose and live in Britain.
+
+-- query attempt 1: identify the brits (residents of Britain)
+
+select m_name Brit_Stays
+from musician m
+join place p on m.living_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name
+
+-- Result:
+Brit_Stays
+Alan Fluff -- 1 cndct
+Andy Jones -- 1 cmpsr
+Elsie James
+Fred Bloggs -- 2 cmpsr, 2 cndct
+Harriet Smithson
+Helen Smyth
+James First -- 3 cmpsr
+James Quick
+James Steeple -- 3 cndct
+Jeff Dawn -- 4 cmpsr, 4 cndct
+Louise Simpson
+Phil Hot -- 5 cmpsr, 5 cndct
+Rose Spring -- 6 cmpsr, 6 cndct
+Steven Chaytors
+Theo Mengel
+Tony Smythe
+
+-- query attempt 2: identify brit composers
+
+select distinct(m_name) Brit_Comps
+from musician m
+join composer c on m.m_no=c.comp_is
+right join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cmp on cmp.c_no=hc.cmpn_no
+left join place p on p.place_no=cmp.c_in
+where place_country IN ("England", "Scotland")
+order by m_name
+
+Result:
+Brit_Comps
+Andy Jones
+Fred Bloggs
+Freda Miles
+Harry Forte
+James First
+Jeff Dawn
+Phil Hot
+Rose Spring
+Sue Little
+
+-- query attempt 3: inner joined tables of compose + live
+
+select Novo.Brit_Stays
+from
+(select m_name Brit_Stays
+from musician m
+join place p on m.living_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name
+) Novo
+inner join
+(
+select distinct(m_name) Brit_Comps
+from musician m
+join composer c on m.m_no=c.comp_is
+right join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cmp on cmp.c_no=hc.cmpn_no
+left join place p on p.place_no=cmp.c_in
+where place_country IN ("England", "Scotland")
+order by m_name
+) Novo2
+on Novo.Brit_Stays=Novo2.Brit_Comps
+order by Brit_Stays
+
+-- Result:
+Brit_Stays
+Andy Jones
+Fred Bloggs
+James First
+Jeff Dawn
+Phil Hot
+Rose Spring
+
+-- query attempt 4: Conducted In
+
+select distinct(m_name)
+from musician m
+join performance perf on m.m_no=perf.conducted_by
+join concert c on c.concert_no=perf.performed_in
+join place p on p.place_no=c.concert_in
+where place_country IN ("England", "Scotland")
+order by m_name
+
+-- Result also the final result of Brit stays + composers
+m_name
+Alan Fluff
+Fred Bloggs
+James Steeple
+Jeff Dawn
+Phil Hot
+Rose Spring
+
+-- query attempt 5 - all 3 lives + composes + conducts
+
+select distinct(Novo.Brit_Stays)
+from
+(select m_name Brit_Stays
+from musician m
+join place p on m.living_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name
+) Novo
+inner join
+(
+select distinct(m_name) Brit_Cond
+from musician m
+join performance perf on m.m_no=perf.conducted_by
+join concert c on c.concert_no=perf.performed_in
+join place p on p.place_no=c.concert_in
+where place_country IN ("England", "Scotland")
+order by m_name
+) Novo2
+on Novo.Brit_Stays=Novo2.Brit_Cond
+inner join
+(
+select distinct(m_name) Brit_Comps
+from musician m
+join composer c on m.m_no=c.comp_is
+right join has_composed hc on hc.cmpr_no=c.comp_no
+left join composition cmp on cmp.c_no=hc.cmpn_no
+left join place p on p.place_no=cmp.c_in
+where place_country IN ("England", "Scotland")
+order by m_name
+) Novo3
+on Novo2.Brit_Cond=Novo3.Brit_Comps
+order by Brit_Stays
+
+-- Result:
+Brit_Stays
+Fred Bloggs
+Jeff Dawn
+Phil Hot
+Rose Spring
 
