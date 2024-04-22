@@ -415,3 +415,206 @@ Jeff Dawn
 Phil Hot
 Rose Spring
 
+-- 9.Show the least commonly played instrument and the number of musicians who play it.
+
+select instrument,count(m_name) Player
+from performer
+join musician on musician.m_no=performer.perf_is
+group by instrument
+Having Player<=1
+order by instrument Desc
+
+-- Result:
+instrument	Player
+trumpet	1
+trombone	1
+horn	1
+cornet	1
+clarinet	1
+banjo	1
+
+-- 10.List the bands that have played music composed by Sue Little; Give the titles of the composition in each case.
+
+-- query attempt 1: compositions by Sue Little.
+
+select m_name, c_title
+from musician m
+join composer c on m.m_no=c.comp_is
+join has_composed hc on hc.cmpr_no=c.comp_no
+join composition cpsn on cpsn.c_no=hc.cmpn_no
+where m_name='Sue Little'
+order by m_no
+
+-- Result:
+m_name	c_title
+Sue Little	Slow Song
+Sue Little	Slow Symphony Blowing
+
+-- query attempt 2: all compositions played by bands.
+
+select band_name, c_title
+from band b
+join performance p on p.gave=b.band_no
+join composition c on c.c_no=p.performed
+
+-- Result:
+band_name	c_title
+ROP	Opus 1
+ROP	Valiant Knight
+ROP	Simple Song
+ROP	Here Goes
+AASO	Little Piece
+AASO	Little Swing Song
+BBSO	Eastern Wind
+BBSO	Slow Symphony Blowing
+The left Overs	Slow Song
+The left Overs	Blue Roses
+The J Bs	Simple Song
+The J Bs	Little Swing Song
+The J Bs	Fast Journey
+Somebody Loves this	Slow Symphony Blowing
+Swinging strings	Slow Song
+The Rest	After the Wind Blows
+The Rest	A Simple Piece
+The Rest	Long Rythms
+The Rest	Eastern Wind
+BBSO	Slow Song
+
+-- query attempt 3: combo of 1 and 2
+
+select Novo.band_name Bands, group_concat(" ",Novo2.c_title) Titles, Novo2.m_name Composer
+from
+(
+select m_name, c_title
+from musician m
+join composer c on m.m_no=c.comp_is
+join has_composed hc on hc.cmpr_no=c.comp_no
+join composition cpsn on cpsn.c_no=hc.cmpn_no
+where m_name='Sue Little'
+order by m_no
+) Novo2
+left join
+(
+select band_name, c_title
+from band b
+join performance p on p.gave=b.band_no
+join composition c on c.c_no=p.performed
+) Novo
+on Novo2.c_title=Novo.c_title
+group by band_name
+
+-- Result:
+Bands	Titles	Composer
+BBSO	Slow Symphony Blowing, Slow Song	Sue Little
+Somebody Loves this	Slow Symphony Blowing	Sue Little
+Swinging strings	Slow Song	Sue Little
+The left Overs	Slow Song	Sue Little
+
+-- Musicians: hard questions
+
+-- 11.List the name and town of birth of any performer born in the same city as James First.
+
+select place_town Birth_town, group_concat(distinct(m_name) separator ", ") Performer
+from musician m1
+join performer pe1 on m1.m_no=pe1.perf_is
+join place pl1 on pl1.place_no=m1.born_in
+where place_town=
+(select place_town
+from musician m1
+join performer pe1 on m1.m_no=pe1.perf_is
+join place pl1 on pl1.place_no=m1.born_in
+where m_name="James First"
+order by m_no)
+and m_name!="James First"
+
+-- Result: Musician Andy Jones is also born in same city as James First however he is not listed as a performer hence my query excludes him.
+Birth_town	Performer
+London	Alan Fluff, Theo Mengel
+
+--12.Create a list showing for EVERY musician born in Britain the number of compositions and the number of instruments played.
+
+-- query attempt 1: born in Britain
+
+select m_name
+from musician m
+join place p on m.born_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name
+
+-- query 2: joined instruments
+
+select Novo2.m_name, Novo.Instr, Novo.No
+from
+(select m_name
+from musician m
+join place p on m.born_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name) Novo2
+left join
+(select m_name, count(instrument)No,group_concat(instrument order by instrument separator ", ") Instr
+from musician m
+join performer p on p.perf_is=m.m_no
+group by m_name
+order by m_name) Novo
+on Novo.m_name=Novo2.m_name
+
+-- query 3: compositions
+
+select m_name Name, count(c_title) CComp, group_concat(c_title order by c_title separator ", ") Comp
+from musician m
+join composer c on m.m_no=c.comp_is
+join has_composed hc on hc.cmpr_no=c.comp_no
+join composition cmp on cmp.c_no=hc.cmpn_no
+group by m_name
+Order by CComp Desc
+
+-- query 4: COMBO and Final
+
+select Novo3.place_country "Birth Place", Novo3.m_name Musician, coalesce(Novo3.Instr,"--")Instruments, coalesce(Novo3.No,"--") "No of Instru", 
+coalesce(Novo4.Comp,"--") Compositions,
+coalesce(Novo4.CComp,"--")"No of Comp" 
+from
+(
+select Novo2.m_name, Novo.Instr, Novo.No, Novo2.place_country
+from
+(select m_name, place_country
+from musician m
+join place p on m.born_in=p.place_no
+where place_country IN ("England", "Scotland")
+order by m_name) Novo2
+left join
+(select m_name, count(instrument)No,group_concat(instrument order by instrument separator ", ") Instr
+from musician m
+join performer p on p.perf_is=m.m_no
+group by m_name
+order by m_name) Novo
+on Novo.m_name=Novo2.m_name
+) Novo3
+left join
+(
+select m_name Name, count(c_title) CComp, group_concat(c_title order by c_title separator ", ") Comp
+from musician m
+join composer c on m.m_no=c.comp_is
+join has_composed hc on hc.cmpr_no=c.comp_no
+join composition cmp on cmp.c_no=hc.cmpn_no
+group by m_name
+Order by CComp Desc
+) Novo4
+on Novo3.m_name=Novo4.Name
+order by m_name
+
+-- Result:
+Birth Place	Musician	Instruments	No of Instru	Compositions	No of Comp
+England	Alan Fluff	viola, violin	2	--	--
+England	Andy Jones	--	--	A Simple Piece	1
+England	Davis Heavan	cello, guitar, viola	3	--	--
+England	Fred Bloggs	--	--	Opus 1, Simple Love Song	2
+England	Harriet Smithson	viola, violin	2	--	--
+England	Harry Forte	clarinet, drums, violin	3	Eastern Wind, Fast Journey	2
+England	James First	violin	1	Blue Roses, Here Goes, Long Rythms, Velvet Rain	4
+England	James Steeple	--	--	--	--
+Scotland	Louise Simpson	bass, cornet, trombone	3	--	--
+Scotland	Lovely Time	--	--	Complex Rythms, Little Piece	2
+Scotland	Phil Hot	--	--	Blue Roses, Valiant Knight, Velvet Rain	3
+Scotland	Steven Chaytors	--	--	--	--
+England	Theo Mengel	banjo, drums, violin	3	--	--
