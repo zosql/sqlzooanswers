@@ -98,3 +98,30 @@ order_ref	line_no	quantity
 10	2	3
 ...
 
+-- 6.Customers place orders - each order contains many lines - each line of the order refers to a garment:
+
+SELECT c_name, order_date, order_no, line_no
+   FROM jmcust, dress_order, order_line
+  WHERE          jmcust.c_no = dress_order.cust_no
+  AND   dress_order.order_no = order_line.order_ref
+
+-- Result:
+c_name	order_date	order_no	line_no
+Mrs Peacock	Thu, 10 Jan 2002 00:00:00 GMT	1	1
+Mrs Peacock	Thu, 10 Jan 2002 00:00:00 GMT	1	2
+Dr Green	Fri, 11 Jan 2002 00:00:00 GMT	2	1
+Dr Green	Fri, 11 Jan 2002 00:00:00 ...
+
+-- 7.There's also a dress maker table, and a table called construction which gives you information about who made which order and when:
+
+SELECT d_no, d_name, construction.order_ref, construction.line_ref, start_date, finish_date
+ FROM dressmaker, order_line, construction
+ WHERE  d_no=maker  
+ AND order_line.order_ref=construction.order_ref 
+ AND order_line.line_no=construction.line_ref
+
+-- Result:
+d_no	d_name	order_ref	line_ref	start_date	finish_date
+1	Mrs Hem	1	1	Thu, 10 Jan 2002 00:00:00 GMT	Tue, 05 Mar 2002 00:00:00 GMT
+1	Mrs Hem	4	2	Sat, 02 Feb 2002 00:00:00 GMT	Mon, 25 Mar 2002 00:00:00 GMT
+1	Mrs Hem	7	1	Thu, 21 Feb 2002 00 ...
