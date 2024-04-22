@@ -739,3 +739,108 @@ Alan Fluff	PERFORMED_IN
 
 -- 15.Jeff Dawn plays in a band with someone who plays in a band with Sue Little. Who is it and what are the bands?
 
+-- query attempt 1: Jeff and Sue bands
+
+select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Jeff Dawn' -- Jeff bands
+
+select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Sue Little' -- Sue bands
+
+select m.m_name, band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is -- All bands
+
+-- query attempt 2:
+
+select m.m_name, band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where b.band_name IN (select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Jeff Dawn') -- Jeff band players
+
+-- Result:
+m_name	band_name
+John Smith	AASO
+Theo Mengel	AASO
+Harry Forte	AASO
+Jeff Dawn	AASO
+Jeff Dawn	Swinging strings
+Davis Heavan	AASO
+Davis Heavan	Swinging strings
+James Quick	AASO
+Elsie James	AASO
+Harry Forte	Somebody Loves this
+Jeff Dawn	Somebody Loves this
+Davis Heavan	Swinging strings
+
+select m.m_name, band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where b.band_name IN (select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Sue Little') -- Sue band players
+
+-- Result:
+m_name	band_name
+James First	BBSO
+Sue Little	BBSO
+John Smith	BBSO
+
+-- query attempt 3: common band players!
+
+select N Common_Player, B Jeff_Band, B2 Sue_Band
+from
+(
+select m.m_name N, band_name B
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where b.band_name IN (select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Jeff Dawn') -- Jeff band players
+)JBP
+join 
+(
+select m.m_name N2, band_name B2
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where b.band_name IN (select band_name
+from band b
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where m_name='Sue Little') -- Sue band players
+)SBP
+on SBP.N2=JBP.N
+
+-- Result:
+Common_Player	Jeff_Band	Sue_Band
+John Smith	AASO	BBSO
