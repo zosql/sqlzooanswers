@@ -618,3 +618,124 @@ Scotland	Lovely Time	--	--	Complex Rythms, Little Piece	2
 Scotland	Phil Hot	--	--	Blue Roses, Valiant Knight, Velvet Rain	3
 Scotland	Steven Chaytors	--	--	--	--
 England	Theo Mengel	banjo, drums, violin	3	--	--
+
+-- 13.Give the band name, conductor and contact of the bands performing at the most recent concert in the Royal Albert Hall.
+
+select band_name, m.m_name Conductor, m1.m_name Contact, date_format(con_date,"%d-%m-%Y") Date, concert_venue Venue
+from performance p
+join musician m on m.m_no=p.conducted_by
+join band b on b.band_no=p.gave
+join musician m1 on b.band_contact=m1.m_no
+join concert crt on crt.concert_in=p.performed_in
+where concert_venue='Royal Albert Hall'
+order by con_date Desc
+
+-- Result:
+band_name	Conductor	Contact	Date	Venue
+Swinging strings	Tony Smythe	Sue Little	12-04-1993	Royal Albert Hall
+
+-- 14.Give a list of musicians associated with Glasgow. Include the name of the musician and the nature of the association - one or more of 'LIVES_IN', 'BORN_IN', 'PERFORMED_IN' AND 'IN_BAND_IN'.
+
+-- query attempt 1: lives in and born in
+
+select place_town, m_name, coalesce("BORN_IN")
+from place p
+join musician m on p.place_no=m.born_in
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("LIVES_IN")
+from place p
+join musician m on p.place_no=m.living_in
+where place_town='Glasgow'
+
+-- query attempt 2: performed IN
+
+select place_town Town, m_name Musician, coalesce("LIVES_IN") "Nature of Asso"
+from place p
+join musician m on p.place_no=m.living_in
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("BORN_IN")
+from place p
+join musician m on p.place_no=m.born_in
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("PERFORMED_IN")
+from performance perf
+join place p on p.place_no=perf.performed_in
+join musician m on m.m_no=perf.conducted_by
+where place_town='Glasgow'
+
+-- query attempt 3: in band in
+
+select place_town, m_name, coalesce("IN_BAND_IN")
+from band b
+join place p on b.band_home=p.place_no
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where place_town ='Glasgow'
+
+-- query attempt 4: combo
+
+select Musician, group_concat(Nature_of_Asso separator ", ") Nature_of_Asso
+from
+(
+select place_town Town, m_name Musician, coalesce("LIVES_IN") Nature_of_Asso
+from place p
+join musician m on p.place_no=m.living_in
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("BORN_IN")
+from place p
+join musician m on p.place_no=m.born_in
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("PERFORMED_IN")
+from performance perf
+join place p on p.place_no=perf.performed_in
+join musician m on m.m_no=perf.conducted_by
+where place_town='Glasgow'
+
+UNION
+
+select place_town, m_name, coalesce("IN_BAND_IN")
+from band b
+join place p on b.band_home=p.place_no
+join plays_in pi on pi.band_id=b.band_no
+join performer perf on perf.perf_no=pi.player
+join musician m on m.m_no=perf.perf_is
+where place_town ='Glasgow'
+) Novo
+group by Musician
+order by Nature_of_Asso
+
+-- Result:
+Musician	Nature_of_Asso
+Lovely Time	BORN_IN
+Steven Chaytors	BORN_IN
+Davis Heavan	IN_BAND_IN
+Elsie James	IN_BAND_IN
+Harry Forte	IN_BAND_IN
+James Quick	IN_BAND_IN
+John Smith	IN_BAND_IN
+Theo Mengel	IN_BAND_IN
+Jeff Dawn	IN_BAND_IN, LIVES_IN
+Andy Jones	LIVES_IN
+Harriet Smithson	LIVES_IN
+James Steeple	LIVES_IN
+Louise Simpson	LIVES_IN, BORN_IN
+Alan Fluff	PERFORMED_IN
+
+-- 15.Jeff Dawn plays in a band with someone who plays in a band with Sue Little. Who is it and what are the bands?
+
