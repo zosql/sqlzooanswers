@@ -125,3 +125,46 @@ d_no	d_name	order_ref	line_ref	start_date	finish_date
 1	Mrs Hem	1	1	Thu, 10 Jan 2002 00:00:00 GMT	Tue, 05 Mar 2002 00:00:00 GMT
 1	Mrs Hem	4	2	Sat, 02 Feb 2002 00:00:00 GMT	Mon, 25 Mar 2002 00:00:00 GMT
 1	Mrs Hem	7	1	Thu, 21 Feb 2002 00 ...
+
+-- Dressmaker database: easy questions
+
+-- 1.List the post code, order number, order date and garment descriptions for all items associated with Ms Brown.
+
+select c_post_code, order_no, line_no,order_date,  description
+from jmcust, dress_order, garment, order_line, quantities
+where jmcust.c_no=dress_order.cust_no
+and dress_order.order_no=order_line.order_ref
+and (order_line.ol_style=quantities.style_q
+and order_line.ol_size=quantities.size_q)
+and quantities.style_q=garment.style_no
+and c_name='Ms Brown'
+order by order_no, line_no
+
+-- Result:
+c_post_code	order_no	line_no	order_date	description
+B2 5AB	7	1	Thu, 21 Feb 2002 00:00:00 GMT	Short Skirt
+B2 5AB	7	2	Thu, 21 Feb 2002 00:00:00 GMT	Sundress
+B2 5AB	7	3	Thu, 21 Feb 2002 00:00:00 GMT	Suntop
+B2 5AB	9	1	Wed, 27 Feb 2002 00:00:00 GMT	Shorts
+
+-- 2.List the customer name, postal information, order date and order number of all orders that have been completed.
+
+select c_name, c_post_code,order_date,order_no, line_no,completed
+from jmcust, dress_order,order_line
+where jmcust.c_no=dress_order.cust_no
+and dress_order.order_no=order_line.order_ref
+and completed = 'Y'
+
+-- Result:
+c_name	c_post_code	order_date	order_no	line_no	completed
+Mrs Peacock	DD6 9NM	Thu, 10 Jan 2002 00:00:00 GMT	1	1	Y
+Mrs Peacock	DD6 9NM	Thu, 10 Jan 2002 00:00:00 GMT	1	2	Y
+Dr Green	SJ4 4WE	Fri, 11 Jan 2002 00:00:00 GMT	2	1	Y
+Dr Green	SJ4 4WE	Fri, 11 Jan 2002 00:00:00 GMT	2	2	Y
+Dr Green	SJ4 4WE	Fri, 11 Jan 2002 00:00:00 GMT	2	3	Y
+Ms Muir	H2 7CV	Sun, 20 Jan 2002 00:00:00 GMT	3	1	Y
+Mr Brass	FG24 9NM	Sat, 02 Feb 2002 00:00:00 GMT	4	1	Y
+Mr Brass	FG24 9NM	Sat, 02 Feb 2002 00:00:00 GMT	4	2	Y
+Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	1	Y
+Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	2	Y
+Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	3	Y
