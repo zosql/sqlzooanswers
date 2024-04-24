@@ -375,3 +375,220 @@ Long Skirt	Cotton	Blue Stripe	Woven	8	25.2
 Long Skirt	Cotton	Pink Check	Woven	8	25.2
 Long Skirt	Cotton	Yellow Stripe	Woven	8	25.2
 
+-- 5.What is the most common size ordered for each garment type? List description, size and number of orders, 
+assuming that there could be several equally popular sizes for each type.
+
+-- query attempt 1:
+
+select description, ol_size, C
+from
+(
+select description, ol_size, C, dense_rank() over(partition by description order by C Desc) Rank
+from
+(
+select description, ol_size, count(line_no) C
+from garment,quantities, order_line
+where style_no=style_q=ol_style
+group by description, ol_size
+) Novo
+) Novo2
+where Rank =1 
+
+-- Result: answer seems fishy because for all garments the common size and the most no of orders is same.
+description	ol_size	C
+Long Skirt	8	18
+Short Skirt	8	18
+Shorts	8	18
+Sundress	8	18
+Suntop	8	18
+Trousers	8	18
+
+-- query attempt 2:
+
+select description, size_q, C
+from
+(
+select description, size_q, C, rank() over (partition by description order by C Desc) Rank
+from
+(
+select description, size_q, count(*) C
+from garment g
+join quantities q on g.style_no=q.style_q
+join order_line ol on ol.ol_style=q.style_q and q.size_q=ol.ol_size
+group by description, size_q
+order by description, count(*) Desc
+) Novo
+) Novo2
+where Rank=1
+order by C Desc, size_q Desc
+
+-- Result: perfect!
+description	size_q	C
+Trousers	8	3
+Long Skirt	8	3
+Suntop	12	2
+Sundress	10	2
+Short Skirt	10	2
+Shorts	18	1
+Shorts	16	1
+Shorts	14	1
+Shorts	10	1
+Shorts	8	1
+
+-- query attempt 1 ws wrong because the size matching was not done between two tables
+
+-- Dressmaker hard
+
+-- Dressmaker database: hard questions
+
+-- 2.It is decided to review the materials stock. How much did each material contribute to turnover in 2002?
+
+select material_no, fabric, colour, pattern,
+round(sum(cost*quantity),2) "TO_OC",
+round((
+(round(sum(cost*quantity),2))
+/(select round(sum(cost*quantity),2)
+from material, order_line, quantities, garment
+where ol_material=material_no
+and style_q=ol_style=style_no and size_q=ol_size)*100
+),2) "%",
+round(sum(labour_cost)+sum(cost*quantity),2) "TO_WL",
+round((
+(round(sum(labour_cost)+sum(cost*quantity),2))
+/(select round(sum(labour_cost)+sum(cost*quantity),2) "TO_WL"
+from material, order_line, quantities, garment
+where ol_material=material_no
+and style_q=ol_style=style_no and size_q=ol_size)*100
+),2) "%"
+from material, order_line, quantities, garment
+where ol_material=material_no
+and style_q=ol_style=style_no and size_q=ol_size
+group by material_no
+
+-- Result: turnover TO w/o labour of only cloth and TO w labour of only cloth
+material_no	fabric	colour	pattern	TO_OC	%	TO_WL	%
+1	Silk	Black	Plain	34.3	7.9	88.3	8.9
+2	Silk	Red Abstract	Printed	93	21.43	147	14.82
+3	Cotton	Yellow Stripe	Woven	17.1	3.94	71.1	7.17
+4	Cotton	Green Stripe	Woven	6.6	1.52	42.6	4.29
+5	Cotton	Black Dotted	Woven	19.2	4.42	55.2	5.56
+6	Cotton	Red Stripe	Woven	6.6	1.52	42.6	4.29
+7	Polyester	Pale Yellow	Printed	10.96	2.52	46.96	4.73
+8	Cotton	Blue Stripe	Woven	12.6	2.9	30.6	3.08
+9	Cotton	Pink Check	Woven	13.8	3.18	49.8	5.02
+10	Silk	Green Abstract	Printed	124.5	28.68	178.5	17.99
+11	Rayon	Red/Orange	Printed	38.8	8.94	74.8	7.54
+12	Serge	Navy Blue	Woven	24.75	5.7	60.75	6.12
+13	Cotton	Blue Abstract	Printed	16.1	3.71	52.1	5.25
+14	Cotton	Green Abstract	Printed	15.75	3.63	51.75	5.22
+
+-- 3.An order for shorts has just been placed and the work is to be distributed amongst the workforce,
+and we wish to know how busy the shorts makers are.
+For each of the workers who have experience of making shorts show the number of hours work that she is currently committed to, 
+assuming a meagre wage of £4.50 per hour
+
+-- query attempt 1: those with shorts making experience
+
+select distinct(d_name)
+from dressmaker d, construction c, order_line ol, garment g
+where d_no=maker
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and style_no=ol_style and description='Shorts'
+order by ol.order_ref
+
+-- Result:
+d_name
+Mr Needles
+Miss Stitch
+Miss Pins
+Mr Seam
+
+-- query attempt 2: at the rate of 4.5 per hour how many hours can they dedicate
+
+select d_name, round(labour_cost/4.5,2) hours
+from dressmaker d, construction c, order_line ol, garment g
+where style_no=ol_style
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and d_no=maker
+and description='Shorts'
+group by d_name
+
+-- Result:
+d_name	hours
+Miss Pins	2.22
+Miss Stitch	2.22
+Mr Needles	2.22
+Mr Seam	2.22
+
+-- query attempt 3: how busy the dress makers are?
+
+select d_name DM, round(sum(labour_cost/4.5),2) Cmtd_Hrs
+from dressmaker d, construction c, order_line ol, garment g
+where style_no=ol_style
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and d_no=maker
+group by d_name
+
+-- query attempt 4: business or committed hours of the shorts makers join 1 and 3
+
+select Shorts_Makers, Cmtd_Hrs
+from
+(
+select distinct(d_name) Shorts_Makers
+from dressmaker d, construction c, order_line ol, garment g
+where d_no=maker
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and style_no=ol_style and description='Shorts'
+order by ol.order_ref
+) Novo
+join
+(
+select d_name DM, round(sum(labour_cost/4.5),2) Cmtd_Hrs
+from dressmaker d, construction c, order_line ol, garment g
+where style_no=ol_style
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and d_no=maker
+group by d_name
+) Novo2
+where Novo.Shorts_Makers=Novo2.DM
+order by Cmtd_Hrs Desc
+
+-- Result: this was not right because i did not incorporate the fact that if the dressmakers have a finish date for line items then they are free for the hours
+Shorts_Makers	Cmtd_Hrs
+Miss Stitch	21.33
+Mr Seam	15.11
+Miss Pins	12.89
+Mr Needles	10.83
+
+-- query attempt 5:  query no 4 with incorporation of finish date is null so we can find the ongoing work of each dressmaker and assume the working hours.
+
+select Shorts_Makers, coalesce(Cmtd_Hrs, "0") Hours_Work
+from
+(
+select distinct(d_name) Shorts_Makers
+from dressmaker d, construction c, order_line ol, garment g
+where d_no=maker
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and style_no=ol_style and description='Shorts'
+order by ol.order_ref
+) Novo
+left join
+(
+select d_name DM, round(sum(labour_cost/4.5),2) Cmtd_Hrs
+from dressmaker d, construction c, order_line ol, garment g
+where style_no=ol_style
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and d_no=maker
+and finish_date is NULL
+group by d_name
+) Novo2
+on Novo.Shorts_Makers=Novo2.DM
+order by Cmtd_Hrs Desc
+
+-- Result:
+Shorts_Makers	Hours_Work
+Miss Stitch	15.78
+Mr Seam	10.67
+Miss Pins	8.89
+Mr Needles	0
+
