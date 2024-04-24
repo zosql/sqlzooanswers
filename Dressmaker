@@ -592,3 +592,219 @@ Mr Seam	10.67
 Miss Pins	8.89
 Mr Needles	0
 
+-- 4."Big spender of the year" is the customer who spends the most on high value items. 
+Identify the "Big spender of the year 2002" if the "high value" threshold is set at £30. Also who would it be if the threshold was £20 or £50?
+
+-- fraction of overall spending of each customer on high-value items threshold of 30 will differ from 20 or 50.
+
+-- query result 1: will be to find the overall spending by each customer.
+
+select c_name, round(sum(labour_cost+quantity*cost),2) Tot_Spend
+from jmcust c, dress_order d, order_line o, quantities q, garment g, material m
+where c_no=cust_no
+and order_no=order_ref
+and (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+group by c_name
+
+-- Result:
+c_name	Tot_Spend
+Dr Green	61.35
+Mr Brass	230.49
+Mrs Peacock	85.9
+Ms Black	56.95
+Ms Brown	97.98
+Ms Gray	128.9
+Ms Muir	9.5
+Ms White	208.25
+
+-- query result 2: find high-value items = style_no + size_q + material_no combo
+
+select c_name, style_no, size_q, material_no, round(sum(labour_cost+quantity*cost),2) Tot_Spend,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=30 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_30_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=20 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_20_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=50 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_50_Flag
+from jmcust c, dress_order d, order_line o, quantities q, garment g, material m
+where c_no=cust_no
+and order_no=order_ref
+and (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+group by style_no, size_q, material_no
+order by c_name, style_no, size_q, material_no
+
+-- Result:
+c_name	H30	H20	H50	Tot_Spend
+Mr Brass	148.2	198.54	72	230.49
+Ms White	173.55	173.55	63	208.25
+Ms Brown	52	74.65	52	97.97
+Mrs Peacock	85.9	85.9	0	85.9
+Ms Gray	32.85	114.35	0	128.9
+Ms Black	0	29.6	0	56.95
+Dr Green	0	29.6	0	61.35
+Ms Muir	0	0	0	9.5
+
+-- query result 3: just need cosmetic alignment now to show the big spender for each threshold
+
+select concat(c_name,": when high value threshold at £30") "Big_S_Y2002", concat("£", max(H30)) Spend
+from
+(
+select c_name, sum(HV_30_Flag) H30, sum(HV_20_Flag) H20, sum(HV_50_Flag) H50, sum(Tot_Spend) Tot_Spend
+from
+(
+select c_name, style_no, size_q, material_no, round(sum(labour_cost+quantity*cost),2) Tot_Spend,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=30 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_30_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=20 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_20_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=50 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_50_Flag
+from jmcust c, dress_order d, order_line o, quantities q, garment g, material m
+where c_no=cust_no
+and order_no=order_ref
+and (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+group by style_no, size_q, material_no
+order by c_name, style_no, size_q, material_no
+) Novo
+group by c_name
+order by H30 Desc
+) Novo2
+
+UNION
+
+select concat(c_name,": when high value threshold at £20") "Big_S_Y2002", concat("£", max(H20)) Spend
+from
+(
+select c_name, sum(HV_30_Flag) H30, sum(HV_20_Flag) H20, sum(HV_50_Flag) H50, sum(Tot_Spend) Tot_Spend
+from
+(
+select c_name, style_no, size_q, material_no, round(sum(labour_cost+quantity*cost),2) Tot_Spend,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=30 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_30_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=20 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_20_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=50 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_50_Flag
+from jmcust c, dress_order d, order_line o, quantities q, garment g, material m
+where c_no=cust_no
+and order_no=order_ref
+and (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+group by style_no, size_q, material_no
+order by c_name, style_no, size_q, material_no
+) Novo
+group by c_name
+order by H20 Desc
+) Novo2
+
+UNION
+
+select concat(c_name,": when high value threshold at £50") "Big_S_Y2002", concat("£", max(H50)) Spend
+from
+(
+select c_name, sum(HV_30_Flag) H30, sum(HV_20_Flag) H20, sum(HV_50_Flag) H50, sum(Tot_Spend) Tot_Spend
+from
+(
+select c_name, style_no, size_q, material_no, round(sum(labour_cost+quantity*cost),2) Tot_Spend,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=30 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_30_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=20 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_20_Flag,
+(case
+when (round(sum(labour_cost+quantity*cost),2))>=50 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) HV_50_Flag
+from jmcust c, dress_order d, order_line o, quantities q, garment g, material m
+where c_no=cust_no
+and order_no=order_ref
+and (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+group by style_no, size_q, material_no
+order by c_name, style_no, size_q, material_no
+) Novo
+group by c_name
+order by H50 Desc
+) Novo2
+
+-- Result:
+Big_S_Y2002	Spend
+Ms White: when high value threshold at £30	£173.55
+Mr Brass: when high value threshold at £20	£198.54
+Mr Brass: when high value threshold at £50	£72
+
+-- 5.Who is the fastest at making trousers?
+
+-- query 1: trouser makers
+
+select distinct(d_name)
+from dressmaker d, construction c, order_line ol, garment g
+where d_no=maker
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and style_no=ol_style and description='Trousers'
+order by ol.order_ref
+
+-- Result:
+d_name
+Mrs Hem
+Miss Pins
+Mr Seam
+Mr Needles
+Miss Stitch
+
+-- query 2: timestampdiff
+
+select d_name, description, coalesce(timestampdiff(DAY, start_date, finish_date),"unfinished") Days
+from dressmaker d, construction c, order_line ol, garment g
+where d_no=maker
+and (ol.order_ref=c.order_ref and ol.line_no=c.line_ref)
+and style_no=ol_style and description='Trousers'
+group by ol.order_ref, line_no
+order by Days
+Limit 1
+
+-- Result:
+d_name	description	Days
+Mr Needles	Trousers	3
+
