@@ -168,3 +168,165 @@ Mr Brass	FG24 9NM	Sat, 02 Feb 2002 00:00:00 GMT	4	2	Y
 Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	1	Y
 Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	2	Y
 Ms White	E24 8PQ	Sun, 03 Feb 2002 00:00:00 GMT	5	3	Y
+
+-- 3.Which garments have been made or are being made from 'red abstract' or 'blue abstract' coloured materials.
+
+select colour, description, order_ref, line_no
+from garment, order_line, material
+where garment.style_no=order_line.ol_style 
+and order_line.ol_material=material.material_no
+and colour IN ('red abstract','blue abstract')
+order by colour, order_ref, line_no
+
+-- Result:
+colour	description	order_ref	line_no
+Blue Abstract	Long Skirt	6	2
+Blue Abstract	Short Skirt	12	1
+Red Abstract	Long Skirt	1	2
+Red Abstract	Sundress	7	2
+Red Abstract	Trousers	12	4
+
+-- 4.How many garments has each dressmaker constructed? You should give the number of garments and the name and postal information of each dressmaker.
+
+select d_name Dressmaker, d_post_code Postal_Info, count(finish_date) Finished, count(start_date)-count(finish_date) Unfinished
+from dressmaker dm, construction c, order_line ol
+where d_no=maker and (c.order_ref=ol.order_ref and c.line_ref=ol.line_no)
+group by d_name
+order by count(*) Desc, Dressmaker
+
+-- Result:
+Dressmaker	Postal_Info	Finished	Unfinished
+Miss Stitch	DF4 7HJ	2	4
+Mrs Hem	A12 6BC	2	3
+Miss Pins	B4 9BL	1	3
+Mr Needles	E12 6LG	4	0
+Mr Seam	H45 7YH	1	3
+Ms Sew	EF7 9KL	3	1
+Mr Taylor	SH6 9RT	2	1
+
+-- 5.Give the names of those dressmakers who have finished items made from silk for completed orders.
+
+select d_name Dressmaker, count(finish_date) Finished_OC
+from dressmaker dm, construction c, order_line ol, material m, dress_order do
+where d_no=maker and (c.order_ref=ol.order_ref and c.line_ref=ol.line_no) and m.material_no=ol.ol_material
+and do.order_no=ol.order_ref
+and fabric='silk' and completed='Y'
+group by d_name
+order by count(*) Desc, Dressmaker
+
+-- Result:
+Dressmaker	Finished_OC
+Mrs Hem	2
+Miss Stitch	1
+Mr Needles	1
+
+-- Dressmaker medium
+
+-- Dressmaker database: medium questions
+
+-- 1. Assuming that any garment could be made in any of the available materials, list the garments (description, fabric, colour and pattern) 
+which are expensive to make, that is, those for which the labour costs are 80% or more of the total cost.
+
+select description,fabric,colour, pattern, (labour_cost+cost) Total_Cost, concat(round(labour_cost/(labour_cost+cost)*100), "%") Labor_Cost
+from garment
+cross join material
+group by description,fabric,colour, pattern
+having Labor_Cost>=80
+order by description
+
+-- Result:
+description	fabric	colour	pattern	Total_Cost	Labor_Cost
+Long Skirt	Cotton	Black Dotted	Woven	18	83%
+Long Skirt	Cotton	Blue Abstract	Printed	18.5	81%
+Long Skirt	Cotton	Blue Stripe	Woven	18	83%
+Long Skirt	Cotton	Green Abstract	Printed	18.5	81%
+Long Skirt	Cotton	Green Stripe	Woven	18	83%
+Long Skirt	Cotton	Pink Check	Woven	18	83%
+Long Skirt	Cotton	Red Stripe	Woven	18	83%
+Long Skirt	Cotton	Yellow Stripe	Woven	18	83%
+Long Skirt	Polyester	Pale Yellow	Printed	17.55	85%
+Short Skirt	Cotton	Black Dotted	Woven	17.25	83%
+Short Skirt	Cotton	Blue Abstract	Printed	17.75	80%
+Short Skirt	Cotton	Blue Stripe	Woven	17.25	83%
+Short Skirt	Cotton	Green Abstract	Printed	17.75	80%
+Short Skirt	Cotton	Green Stripe	Woven	17.25	83%
+Short Skirt	Cotton	Pink Check	Woven	17.25	83%
+Short Skirt	Cotton	Red Stripe	Woven	17.25	83%
+Short Skirt	Cotton	Yellow Stripe	Woven	17.25	83%
+Short Skirt	Polyester	Pale Yellow	Printed	16.8	85%
+Shorts	Polyester	Pale Yellow	Printed	12.55	80%
+Sundress	Cotton	Black Dotted	Woven	23	87%
+Sundress	Cotton	Blue Abstract	Printed	23.5	85%
+Sundress	Cotton	Blue Stripe	Woven	23	87%
+Sundress	Cotton	Green Abstract	Printed	23.5	85%
+Sundress	Cotton	Green Stripe	Woven	23	87%
+Sundress	Cotton	Pink Check	Woven	23	87%
+Sundress	Cotton	Red Stripe	Woven	23	87%
+Sundress	Cotton	Yellow Stripe	Woven	23	87%
+Sundress	Polyester	Pale Yellow	Printed	22.55	89%
+Sundress	Rayon	Red/Orange	Printed	24	83%
+Trousers	Cotton	Black Dotted	Woven	21	86%
+Trousers	Cotton	Blue Abstract	Printed	21.5	84%
+Trousers	Cotton	Blue Stripe	Woven	21	86%
+Trousers	Cotton	Green Abstract	Printed	21.5	84%
+Trousers	Cotton	Green Stripe	Woven	21	86%
+Trousers	Cotton	Pink Check	Woven	21	86%
+Trousers	Cotton	Red Stripe	Woven	21	86%
+Trousers	Cotton	Yellow Stripe	Woven	21	86%
+Trousers	Polyester	Pale Yellow	Printed	20.55	88%
+Trousers	Rayon	Red/Orange	Printed	22	82%
+
+-- 2.List the descriptions and the number of orders of the less popular garments, that is those for which less than the average number of orders per garment have been placed. Also print out the average number of orders per garment. When calculating the average, ignore any garments for which no orders have been made.
+
+select description LP_Garments, count(line_no) LP_Orders, (select avg(C)
+from
+(
+select count(*) C
+from order_line ol
+join garment g on g.style_no=ol.ol_style
+group by description
+) Novo
+) Avg_No_Orders
+from garment
+join order_line on style_no=ol_style
+group by description
+having LP_Orders <
+(
+select avg(C)
+from
+(
+select count(*) C
+from order_line ol
+join garment g on g.style_no=ol.ol_style
+group by description
+) Novo
+)
+
+-- Result:
+LP_Garments	LP_Orders	Avg_No_Orders
+Short Skirt	5	5.1667
+Shorts	5	5.1667
+Sundress	5	5.1667
+Suntop	4	5.1667
+
+-- 3.Which is the most popular line, that is, the garment with the highest number of orders. Bearing in mind the fact that there may be several such garments, list the garment description(s) and number(s) of orders.
+
+select description PL_Garments, count(line_no) PL_Orders
+from garment
+join order_line on style_no=ol_style
+group by description
+having PL_Orders >=
+(select max(C)
+from
+(select count(*) C
+from order_line ol
+join garment g on g.style_no=ol.ol_style
+group by description)Novo)
+
+-- Result:
+PL_Garments	PL_Orders
+Long Skirt	6
+Trousers	6
+
+-- 4.List the descriptions, and costs of the more expensive size 8, Cotton garments which might be ordered, that is those costing more than the average (labour costs + material costs) to make.
+
