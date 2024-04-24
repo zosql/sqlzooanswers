@@ -328,5 +328,50 @@ PL_Garments	PL_Orders
 Long Skirt	6
 Trousers	6
 
--- 4.List the descriptions, and costs of the more expensive size 8, Cotton garments which might be ordered, that is those costing more than the average (labour costs + material costs) to make.
+-- 4.List the descriptions, and costs of the more expensive size 8, Cotton garments which might be ordered, 
+that is those costing more than the average (labour costs + material costs) to make.
+
+select description, fabric, colour, pattern, size_q, round(cost*quantity+labour_cost,2) TC
+from garment
+cross join material
+cross join quantities
+where size_q=8 and fabric='Cotton'
+and style_q=style_no
+and cost*quantity+labour_cost > (select avg(TC)
+from
+(select round(cost*quantity+labour_cost,2) TC, description, colour, pattern, material_no, quantity
+from garment
+cross join material
+cross join quantities
+where size_q=8 and fabric='cotton' and style_q=style_no
+order by description, colour, pattern, material_no, quantity
+) Novo)
+order by TC Desc
+
+-- Result:
+description	fabric	colour	pattern	size_q	TC
+Sundress	Cotton	Blue Abstract	Printed	8	31.2
+Sundress	Cotton	Green Abstract	Printed	8	31.2
+Sundress	Cotton	Yellow Stripe	Woven	8	29.6
+Sundress	Cotton	Green Stripe	Woven	8	29.6
+Sundress	Cotton	Black Dotted	Woven	8	29.6
+Sundress	Cotton	Red Stripe	Woven	8	29.6
+Sundress	Cotton	Blue Stripe	Woven	8	29.6
+Sundress	Cotton	Pink Check	Woven	8	29.6
+Trousers	Cotton	Blue Abstract	Printed	8	27.45
+Trousers	Cotton	Green Abstract	Printed	8	27.45
+Long Skirt	Cotton	Blue Abstract	Printed	8	26.9
+Long Skirt	Cotton	Green Abstract	Printed	8	26.9
+Trousers	Cotton	Blue Stripe	Woven	8	26.1
+Trousers	Cotton	Pink Check	Woven	8	26.1
+Trousers	Cotton	Yellow Stripe	Woven	8	26.1
+Trousers	Cotton	Green Stripe	Woven	8	26.1
+Trousers	Cotton	Black Dotted	Woven	8	26.1
+Trousers	Cotton	Red Stripe	Woven	8	26.1
+Long Skirt	Cotton	Green Stripe	Woven	8	25.2
+Long Skirt	Cotton	Black Dotted	Woven	8	25.2
+Long Skirt	Cotton	Red Stripe	Woven	8	25.2
+Long Skirt	Cotton	Blue Stripe	Woven	8	25.2
+Long Skirt	Cotton	Pink Check	Woven	8	25.2
+Long Skirt	Cotton	Yellow Stripe	Woven	8	25.2
 
