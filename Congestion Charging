@@ -464,3 +464,38 @@ id	coalesce(peri..
 17	INTERNAL
 18	INTERNAL
 19	INTERNAL
+
+-- query attempt 2:
+
+select id, coalesce(perim,"INTERNAL" ) Position, coalesce(BH,"No busy hour") Busiest_Hour
+from
+(
+select id, perim, Hour(whn) BH,count(reg) C, rank() over(partition by id order by C Desc) R
+from camera c
+left join image i on c.id=i.camera
+group by id, perim, BH
+) Novo
+where R=1
+
+-- Result:
+id	Position	Busiest_Hour
+1	IN	6
+2	IN	7
+3	IN	17
+4	IN	No busy hour
+5	IN	7
+6	IN	No busy hour
+7	IN	No busy hour
+8	IN	7
+9	OUT	16
+10	OUT	18
+11	OUT	18
+12	OUT	18
+13	OUT	No busy hour
+14	OUT	No busy hour
+15	OUT	18
+16	OUT	7
+17	INTERNAL	6
+18	INTERNAL	7
+18	INTERNAL	16
+19	INTERNAL	7
