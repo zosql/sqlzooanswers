@@ -499,3 +499,30 @@ id	Position	Busiest_Hour
 18	INTERNAL	7
 18	INTERNAL	16
 19	INTERNAL	7
+
+-- 5.Anomalous daily permits. Daily permits should not be issued for non-charging days. 
+Find a way to represent charging days. Identify the anomalous daily permits.
+
+-- Anomaly I am guessing means that without permits vehicles are using the zone as evidenced via 
+
+-- query attempt 1:
+
+select *
+from image i
+join vehicle v
+on i.reg=v.id
+left join permit p
+on v.id=p.reg
+
+-- Result: in excerpt of the result the first 6 rows do not have permits issued the same day however might have permits issued earlier. need to check.
+camera	whn	reg	id	keeper	reg	sDate	chargeType
+10	Sun, 25 Feb 2007 18:23:11 GMT	SO 02 MUP	SO 02 MUP				
+11	Sun, 25 Feb 2007 18:26:13 GMT	SO 02 NUP	SO 02 NUP				
+12	Sun, 25 Feb 2007 18:29:01 GMT	SO 02 OUP	SO 02 OUP				
+3	Sun, 25 Feb 2007 18:33:10 GMT	SO 02 PUP	SO 02 PUP				
+3	Sun, 25 Feb 2007 18:39:10 GMT	SO 02 PUP	SO 02 PUP				
+15	Sun, 25 Feb 2007 18:36:31 GMT	SO 02 PUP	SO 02 PUP				
+1	Sun, 25 Feb 2007 06:10:13 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 21 Jan 2006 00:00:00 GMT	Weekly
+9	Sun, 25 Feb 2007 06:26:04 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 21 Jan 2006 00:00:00 GMT	Weekly
+17	Sun, 25 Feb 2007 06:20:01 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 21 Jan 2006 00:00:00 GMT	Weekly
+18	Sun, 25 Feb 2007 06:23:40 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 2
