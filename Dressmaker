@@ -808,3 +808,98 @@ Limit 1
 d_name	description	Days
 Mr Needles	Trousers	3
 
+-- 6."Employee of the month" is the seamstress who completes the greatest value of clothes. Show the "employees of the month" for months in 2002.
+
+select EOM "Emp of Mar'02", min(Mar_EOM) Value
+from
+(
+select d_name EOM, round(sum(labour_cost+quantity*cost),2) Value_Gen,
+(
+case month(finish_date)
+when 1 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Jan_EOM",
+(
+case month(finish_date)
+when 2 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Feb_EOM",
+(
+case month(finish_date)
+when 3 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Mar_EOM",
+(
+case month(finish_date)
+when 4 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Apr_EOM"
+from order_line o, quantities q, garment g, material m, construction c, dressmaker d, dress_order do
+where (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+and (o.order_ref=c.order_ref and o.line_no=c.line_ref)
+and d.d_no=c.maker
+and do.order_no=o.order_ref
+and completed='Y'
+group by d_name
+order by Mar_EOM
+) N
+
+-- Result:
+Emp of Mar'02	Value
+Mrs Hem	108.90
+
+--  double checking this instead of order completed Y changing the approach to finish_date is not null 
+because the order could not be completed due to part of order being with other seamstress
+
+-- query attempt 2:
+
+select EOM "Emp_March'02", concat("£",Mar_EOM) Greatest_Value
+from
+(
+select d_name EOM, round(sum(labour_cost+quantity*cost),2) Value_Gen,
+(
+case month(finish_date)
+when 1 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Jan_EOM",
+(
+case month(finish_date)
+when 2 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Feb_EOM",
+(
+case month(finish_date)
+when 3 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Mar_EOM",
+(
+case month(finish_date)
+when 4 then round(sum(labour_cost+quantity*cost),2)
+else ""
+end
+) "Apr_EOM"
+from order_line o, quantities q, garment g, material m, construction c, dressmaker d, dress_order do
+where (o.ol_size=q.size_q and o.ol_style=q.style_q)
+and style_q=style_no
+and ol_material=material_no
+and (o.order_ref=c.order_ref and o.line_no=c.line_ref)
+and d.d_no=c.maker
+and do.order_no=o.order_ref
+and finish_date is not NULL
+group by d_name
+order by Value_Gen Desc
+) N
+Limit 1
+
+-- Result:
+Emp_March'02	Greatest_Value
+Mr Needles	£123.15
