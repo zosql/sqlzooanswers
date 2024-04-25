@@ -374,3 +374,93 @@ SO 02 CSP	19	Sun, 25 Feb 2007 07:51:10 GMT	Sun, 25 Feb 2007 07:58:01 GMT	11	OUT
 SO 02 DSP	19	Sun, 25 Feb 2007 16:31:01 GMT	Sun, 25 Feb 2007 18:54:30 GMT	9	OUT
 SO 02 JSP	19	Sun, 25 Feb 2007 17:14:11 GMT			
 SO 02 TSP	19	Sun, 25 Feb 2007 07:23:00 GMT	Mon, 26 Feb 2007 05:13:30 GMT	10	OUT
+
+-- The issue with this result is that the exit is not linked to the entry, 
+-- it's basically the first entry and last exit as considered in the query but the exit could have been earlier since there are multiple entries as well
+-- another issue is that camera 19 is neither marked in perim IN or OUT so the assumption that few cameras are at entry (IN) and others at exit (OUT) is debased
+
+-- query attempt 4: there is a need to order and pair entries and exits or more like earliest capture then the next one as a pair.
+
+select reg, whn, camera, w2,c2
+from
+(
+select *, rank() over(partition by reg order by whn) R
+from
+(
+select reg, whn, camera, lead(whn,1) over(order by whn) w2, lead(camera, 1) over(order by whn) c2
+from image
+order by whn
+) N
+where camera=19
+)N2
+where R=1
+
+-- Result: but the SO 02 DSP vehicles exit is not matching the answer by keilorg
+reg	whn	camera	w2	c2
+SO 02 CSP	Sun, 25 Feb 2007 07:51:10 GMT	19	Sun, 25 Feb 2007 07:55:11 GMT	18
+SO 02 DSP	Sun, 25 Feb 2007 16:31:01 GMT	19	Sun, 25 Feb 2007 16:38:31 GMT	18 -- this line doesnt match
+SO 02 JSP	Sun, 25 Feb 2007 17:14:11 GMT	19	Sun, 25 Feb 2007 17:16:11 GMT	3 -- this line doesnt match
+SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT	19	Sun, 25 Feb 2007 07:26:31 GMT	19
+
+-- https://github.com/keilorg/sqlzoo-solutions/blob/main/20%20CongestionCharge.sql
+
+-- KeilOrg Result:
+reg	first_capture..	leave_time	leave_camera
+SO 02 CSP	Sun, 25 Feb 2007 07:51:10 GMT	Sun, 25 Feb 2007 07:55:11 GMT	18
+SO 02 DSP	Sun, 25 Feb 2007 16:31:01 GMT	Sun, 25 Feb 2007 17:42:41 GMT	19
+SO 02 JSP	Sun, 25 Feb 2007 17:14:11 GMT	Sun, 25 Feb 2007 17:17:03 GMT	3
+SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT	Sun, 25 Feb 2007 07:26:31 GMT	19
+
+-- potential issue identified is that lead function didn't use any partition hence the cam records for other reg also got considered to lead
+
+-- query attempt 5: MATCHED!
+
+select reg, whn, camera, w2,c2
+from
+(
+select *, rank() over(partition by reg order by whn) R
+from
+(
+select reg, whn, camera, lead(whn,1) over(partition by reg order by whn) w2, lead(camera, 1) over(partition by reg order by whn) c2
+from image
+order by whn
+) N
+where camera=19
+)N2
+where R=1
+
+-- Result:
+reg	whn	camera	w2	c2
+SO 02 CSP	Sun, 25 Feb 2007 07:51:10 GMT	19	Sun, 25 Feb 2007 07:55:11 GMT	18
+SO 02 DSP	Sun, 25 Feb 2007 16:31:01 GMT	19	Sun, 25 Feb 2007 17:42:41 GMT	19
+SO 02 JSP	Sun, 25 Feb 2007 17:14:11 GMT	19	Sun, 25 Feb 2007 17:17:03 GMT	3
+SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT	19	Sun, 25 Feb 2007 07:26:31 GMT	19
+
+-- 4.For all 19 cameras - show the position as IN, OUT or INTERNAL and the busiest hour for that camera.
+
+-- query attempt 1: INTERNAL
+
+select id, coalesce(perim,"INTERNAL")
+from camera
+
+-- Result:
+id	coalesce(peri..
+1	IN
+2	IN
+3	IN
+4	IN
+5	IN
+6	IN
+7	IN
+8	IN
+9	OUT
+10	OUT
+11	OUT
+12	OUT
+13	OUT
+14	OUT
+15	OUT
+16	OUT
+17	INTERNAL
+18	INTERNAL
+19	INTERNAL
