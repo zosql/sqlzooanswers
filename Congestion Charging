@@ -1,1 +1,376 @@
+-- 1.List the vehicles for which 'Strenuous, Sam' is the registered keeper. 
+The link between Keepers and Vehicles is via the foreign key specified in the CREATE TABLE vehicle statement. Note the line:
 
+SELECT vehicle.id
+  FROM vehicle JOIN keeper
+        ON vehicle.keeper = keeper.id
+   WHERE keeper.name = 'Strenuous, Sam'
+
+-- Result:
+id
+SO 02 DSP
+SO 02 FTP
+SO 02 JTP
+SO 02 NSP
+SO 02 PSP
+
+-- Congestion Easy
+
+-- Congestion Charges: easy questions
+
+-- 1.Show the name and address of the keeper of vehicle SO 02 PSP.
+
+select name, address
+from keeper k, vehicle v
+where k.id=v.keeper
+and v.id='SO 02 PSP'
+
+-- Result:
+name	address
+Strenuous, Sam	Surjection Street
+
+-- 2.Show the number of cameras that take images for incoming vehicles.
+
+select count(*)
+from camera
+where perim='IN'
+
+-- Result:
+count(*)
+8
+
+-- 3.List the image details taken by Camera 10 before 26 Feb 2007.
+
+select *
+from image
+where camera=10
+and whn<'2007-02-26'
+
+-- Result:
+camera	whn	reg
+10	Sun, 25 Feb 2007 07:45:11 GMT	SO 02 CSP
+10	Sun, 25 Feb 2007 18:08:40 GMT	SO 02 ESP
+10	Sun, 25 Feb 2007 18:23:11 GMT	SO 02 MUP
+
+-- 4.List the number of images taken by each camera. Your answer should show how many images have been taken by camera 1, camera 2 etc. The list must NOT include the images taken by camera 15, 16, 17, 18 and 19.
+
+select camera, count(whn)
+from image
+where camera not IN(15,16,17,18,19)
+group by camera
+
+-- Result:
+camera	count(whn)
+1	1
+2	1
+3	5
+5	1
+8	2
+9	8
+10	4
+11	3
+12	4
+
+-- 5.A number of vehicles have permits that start on 30th Jan 2007. List the name and address for each keeper in alphabetical order without duplication.
+
+select name, address
+from permit p, vehicle v, keeper k
+where k.id=v.keeper
+and p.reg=v.id
+and sDate='2007-01-30'
+group by name, address
+
+-- Result:
+name	address
+Ambiguous, Arthur	Absorption Ave.
+Assiduous, Annie	Attribution Alley
+Contiguous, Carol	Circumscription Close
+Strenuous, Sam	Surjection Street
+
+-- Congestion Medium
+
+-- Congestion Charges: medium questions
+
+-- 1.List the owners (name and address) of Vehicles caught by camera 1 or 18 without duplication.
+
+select name, address
+from keeper k, vehicle v, image i
+where k.id=v.keeper
+and v.id=i.reg
+and (camera=1 or camera=18)
+group by name, address
+
+-- Result:
+name	address
+Ambiguous, Arthur	Absorption Ave.
+Inconspicuous, Iain	Interception Rd.
+Strenuous, Sam	Surjection Street
+
+-- 2.Show keepers (name and address) who have more than 5 vehicles.
+
+select name, address, count(v.id) C
+from keeper k, vehicle v
+where k.id=v.keeper
+group by name, address
+having C>5
+
+-- Result:
+name	address	C
+Ambiguous, Arthur	Absorption Ave.	6
+Inconspicuous, Iain	Interception Rd.	7
+
+-- 3.For each vehicle show the number of current permits (suppose today is the 1st of Feb 2007). The list should include the vehicle.s registration and the number of permits. Current permits can be determined based on charge types, e.g. for weekly permit you can use the date after 24 Jan 2007 and before 02 Feb 2007.
+
+-- query attempt 1:
+
+select v.id "Registration", count(sDate) "No of Permits", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+and sDate between date_sub('2007-02-01', Interval 7 DAY) and '2007-02-01'
+and chargeType='Weekly'
+group by v.id,sDate
+
+UNION
+
+select v.id "Registration", count(sDate) "No of Permits", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+and sDate='2007-02-01'
+and chargeType='Daily'
+group by v.id,sDate
+
+UNION
+
+select v.id "Registration", count(sDate) "No of Permits", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+and sDate between date_sub('2007-02-01', Interval 1 YEAR) and '2007-02-01' 
+and chargeType='Annual'
+group by v.id,sDate
+
+UNION
+
+select v.id "Registration", count(sDate) "No of Permits", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+and sDate between date_sub('2007-02-01', Interval 30 DAY)
+and '2007-02-01' 
+and chargeType='Monthly'
+group by v.id,sDate
+
+-- Result:
+Registration	No of Permits	chargeType
+SO 02 DSP	1	Weekly
+SO 02 QSP	1	Annual
+SO 02 RSP	1	Annual
+SO 02 JSP	1	Monthly
+SO 02 KSP	1	Monthly
+
+-- query attempt 2: using case when
+
+select distinct(reg), count(reg), chargeType
+from
+(
+select reg, date_format(sDate,'%Y-%m-%d')sDate,
+date_format((case chargeType
+when 'Daily' then date_add(sDate, INTERVAL 1 DAY)
+when 'Weekly' then date_add(sDate, INTERVAL 1 WEEK)
+when 'Monthly' then date_add(sDate, INTERVAL 1 MONTH)
+when 'Annual' then date_add(sDate, INTERVAL 1 YEAR)
+else ""
+end
+),'%Y-%m-%d') "fDate", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+) N
+where fDate>'2007-02-01'
+and sDate<='2007-02-01'
+group by reg
+
+-- Result: this query required date formatting otherwise even the daily contracts of 1st Feb are getting included in the result
+reg	count(reg)	chargeType
+SO 02 DSP	1	Weekly
+SO 02 JSP	1	Monthly
+SO 02 KSP	1	Monthly
+SO 02 QSP	1	Annual
+SO 02 RSP	1	Annual
+
+-- 4.Obtain a list of every vehicle passing camera 10 on 25th Feb 2007. Show the time, the registration and the name of the keeper if available.
+
+select time_format(whn,'%T') time, reg registration, name keeper
+from vehicle v, image i, keeper k
+where i.reg=v.id
+and v.keeper=k.id
+and camera=10 and date_format(whn,'%Y-%m-%d')='2007-02-25'
+
+-- Result:
+time	registration	keeper
+07:45:11	SO 02 CSP	Ambiguous, Arthur
+18:08:40	SO 02 ESP	Ambiguous, Arthur
+
+-- 5.List the keepers who have more than 4 vehicles and one of them must have more than 2 permits. The list should include the names and the number of vehicles.
+
+-- query attempt 1: those with >4 vehicles
+
+select name, count(distinct(v.id)) C
+from keeper k, permit p, vehicle v
+where k.id=v.keeper
+and v.id=p.reg
+group by name
+having C>4
+
+-- Result:
+name	C
+Ambiguous, Arthur	6
+Incongruous, Ingrid	5
+Inconspicuous, Iain	7
+Strenuous, Sam	5
+
+-- query attempt 2: those with one of the vehicles having >2 permits
+
+select name, reg, count(sDate) P
+from keeper k, permit p, vehicle v
+where k.id=v.keeper
+and v.id=p.reg
+group by name, reg
+having P>2
+
+-- Result:
+select name, reg, count(sDate) P
+from keeper k, permit p, vehicle v
+where k.id=v.keeper
+and v.id=p.reg
+group by name, reg
+having P>2
+
+-- query attempt 3 combines the 1 and 2
+
+select Novo2.name, Novo2.C "No of Vehicles", Novo.P "No of Permits"
+from
+(
+select name, count(distinct(v.id)) C
+from keeper k, permit p, vehicle v
+where k.id=v.keeper
+and v.id=p.reg
+group by name
+having C>4
+)Novo2
+inner join
+(
+select name, reg, count(sDate) P
+from keeper k, permit p, vehicle v
+where k.id=v.keeper
+and v.id=p.reg
+group by name, reg
+having P>2
+) Novo
+on Novo.name=Novo2.name
+
+-- Result:
+name	No of Vehicles	No of Permits
+Inconspicuous, Iain	7	7
+
+-- Congestion Hard
+
+-- Congestion Charges: hard questions
+
+-- 2.There are four types of permit. The most popular type means that this type has been issued the highest number of times. 
+Find out the most popular type, together with the total number of permits issued.
+
+select chargeType, count(*) C
+from permit
+group by chargeType
+order by C Desc
+Limit 1
+
+-- Result:
+chargeType	permit_count
+Daily	27
+
+-- 3.For each of the vehicles caught by camera 19 - show the registration, the earliest time at camera 19 and the time and camera at which it left the zone.
+
+-- query attempt 1: vehicles caught by cam 19 and earliest date, time of capture
+
+select reg, whn
+from
+(
+select reg,whn, rank() over(partition by reg order by whn Asc) R
+from camera, image
+where id=camera
+and camera=19
+) N
+where R=1
+
+-- Result:
+reg	whn
+SO 02 CSP	Sun, 25 Feb 2007 07:51:10 GMT
+SO 02 DSP	Sun, 25 Feb 2007 16:31:01 GMT
+SO 02 JSP	Sun, 25 Feb 2007 17:14:11 GMT
+SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT
+
+-- query attempt 2: cars leaving the zone and datetime
+
+select *
+from
+(
+select reg,whn, perim, rank() over(partition by reg order by whn Desc) RL
+from camera, image
+where id=camera
+and perim='OUT'
+) N2
+where RL=1
+
+-- Result:
+reg	whn	perim	RL
+SO 02 ASP	Sun, 25 Feb 2007 06:26:04 GMT	OUT	1
+SO 02 CSP	Sun, 25 Feb 2007 07:58:01 GMT	OUT	1
+SO 02 DSP	Sun, 25 Feb 2007 18:54:30 GMT	OUT	1
+SO 02 ESP	Sun, 25 Feb 2007 18:08:40 GMT	OUT	1
+SO 02 FSP	Sun, 25 Feb 2007 18:08:00 GMT	OUT	1
+SO 02 GSP	Sun, 25 Feb 2007 18:08:13 GMT	OUT	1
+SO 02 HSP	Sun, 25 Feb 2007 16:51:30 GMT	OUT	1
+SO 02 ISP	Sun, 25 Feb 2007 17:01:13 GMT	OUT	1
+SO 02 MUP	Sun, 25 Feb 2007 18:23:11 GMT	OUT	1
+SO 02 NUP	Sun, 25 Feb 2007 18:26:13 GMT	OUT	1
+SO 02 OUP	Sun, 25 Feb 2007 18:29:01 GMT	OUT	1
+SO 02 PUP	Sun, 25 Feb 2007 18:36:31 GMT	OUT	1
+SO 02 RSP	Sun, 25 Feb 2007 16:39:10 GMT	OUT	1
+SO 02 SSP	Sun, 25 Feb 2007 16:31:01 GMT	OUT	1
+SO 02 TSP	Mon, 26 Feb 2007 05:13:30 GMT	OUT	1
+
+-- query attempt 3: join 1 & 2
+
+select Novo.reg, Novo.camera, Novo.whn,Novo2.whn, Novo2.camera, Novo2.perim
+from
+(
+select reg, whn, camera
+from
+(
+select reg,whn, rank() over(partition by reg order by whn Asc) R, camera
+from camera, image
+where id=camera
+and camera=19
+) N
+where R=1
+
+) Novo
+left join
+(
+select *
+from
+(
+select reg,whn, perim, rank() over(partition by reg order by whn Desc) RL, camera
+from camera, image
+where id=camera
+and perim='OUT'
+) N2
+where RL=1
+) Novo2
+on Novo.reg=Novo2.reg
+
+Result:
+reg	camera	whn	whn	camera	perim
+SO 02 CSP	19	Sun, 25 Feb 2007 07:51:10 GMT	Sun, 25 Feb 2007 07:58:01 GMT	11	OUT
+SO 02 DSP	19	Sun, 25 Feb 2007 16:31:01 GMT	Sun, 25 Feb 2007 18:54:30 GMT	9	OUT
+SO 02 JSP	19	Sun, 25 Feb 2007 17:14:11 GMT			
+SO 02 TSP	19	Sun, 25 Feb 2007 07:23:00 GMT	Mon, 26 Feb 2007 05:13:30 GMT	10	OUT
