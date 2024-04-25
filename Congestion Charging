@@ -528,3 +528,50 @@ camera	whn	reg	id	keeper	reg	sDate	chargeType
 -- Anomaly I am guessing means that without permits vehicles are using the zone as evidenced via query attempt 1.
 -- Evolution: I am thinking non-charging days means when the cameras do not take any images.
 -- Hence anomaly means issuance of a daily permit on non-charging or camera off day. hence query attempt 2
+
+-- query attempt 2: find charging days from the days when images get taken, find the dates when the daily permits gets issued. 
+Join them via case to get charging days and anomaly days.
+
+select reg, date_format(sDate,"%Y-%m-%d") D_PermitDate,
+(
+case
+when date_format(sDate,"%Y-%m-%d") IN (select date_format(whn,"%Y-%m-%d") ChargingDay
+from image
+group by ChargingDay) then "ChargingDay"
+else "Anomaly"
+end
+) Conclusion
+from permit
+where chargeType='Daily'
+group by reg, D_PermitDate
+order by Conclusion Desc
+
+-- Result:
+reg	D_PermitDate	Conclusion
+SO 02 FTP	2007-02-25	ChargingDay
+SO 02 FTP	2007-02-26	ChargingDay
+SO 02 BTP	2006-01-30	Anomaly
+SO 02 GTP	2007-03-01	Anomaly
+SO 02 DTP	2007-01-31	Anomaly
+SO 02 CTP	2007-01-21	Anomaly
+SO 02 KTP	2007-01-30	Anomaly
+SO 02 BTP	2007-02-05	Anomaly
+SO 02 ITP	2006-01-31	Anomaly
+SO 02 BTP	2006-01-31	Anomaly
+SO 02 HTP	2006-01-21	Anomaly
+SO 02 ATP	2007-01-21	Anomaly
+SO 02 ETP	2007-02-21	Anomaly
+SO 02 CTP	2007-01-22	Anomaly
+SO 02 KTP	2007-01-31	Anomaly
+SO 02 BTP	2007-02-06	Anomaly
+SO 02 JTP	2007-01-21	Anomaly
+SO 02 BTP	2007-02-03	Anomaly
+SO 02 HTP	2006-01-22	Anomaly
+SO 02 ATP	2007-01-22	Anomaly
+SO 02 GTP	2007-02-28	Anomaly
+SO 02 ETP	2007-02-22	Anomaly
+SO 02 DTP	2007-01-30	Anomaly
+SO 02 BTP	2007-02-07	Anomaly
+SO 02 JTP	2007-01-22	Anomaly
+SO 02 BTP	2007-02-04	Anomaly
+SO 02 ITP	2006-01-30	Anomaly
