@@ -575,3 +575,44 @@ SO 02 BTP	2007-02-07	Anomaly
 SO 02 JTP	2007-01-22	Anomaly
 SO 02 BTP	2007-02-04	Anomaly
 SO 02 ITP	2006-01-30	Anomaly
+
+-- 6. Issuing fines: Vehicles using the zone during the charge period, on charging days must be issued with fine notices unless they have a permit covering that day. 
+List the name and address of such culprits, give the camera and the date and time of the first offence.
+
+-- query attempt 1: made a mess in 1 query
+
+select name, address,R, camera, ZoneDate, Status, rank() over(partition by reg order by ZoneDate Asc) "Rank"
+from
+(
+select *,
+(
+case
+when ZoneDate>=sDate and ZoneDate<=fDate then "Valid_Permit"
+else "Issue_Fine"
+end
+) Status
+from
+(
+select reg R, date_format(whn,"%Y-%m-%d") ZoneDate, camera, name, address
+from image i, vehicle v, keeper k
+where k.id=v.keeper and i.reg=v.id
+) Novo
+left join
+(
+select reg, date_format(sDate,'%Y-%m-%d')sDate,
+date_format((case chargeType
+when 'Daily' then date_add(sDate, INTERVAL 1 DAY)
+when 'Weekly' then date_add(sDate, INTERVAL 1 WEEK)
+when 'Monthly' then date_add(sDate, INTERVAL 1 MONTH)
+when 'Annual' then date_add(sDate, INTERVAL 1 YEAR)
+else ""
+end
+),'%Y-%m-%d') "fDate", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+) Novo2
+on Novo.R=Novo2.reg
+where sDate is not NULL
+) Novo3
+where Status ='Issue_Fine'
+group by name, address, R, camera, ZoneDate
