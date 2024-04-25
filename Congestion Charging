@@ -503,8 +503,6 @@ id	Position	Busiest_Hour
 -- 5.Anomalous daily permits. Daily permits should not be issued for non-charging days. 
 Find a way to represent charging days. Identify the anomalous daily permits.
 
--- Anomaly I am guessing means that without permits vehicles are using the zone as evidenced via 
-
 -- query attempt 1:
 
 select *
@@ -526,3 +524,7 @@ camera	whn	reg	id	keeper	reg	sDate	chargeType
 9	Sun, 25 Feb 2007 06:26:04 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 21 Jan 2006 00:00:00 GMT	Weekly
 17	Sun, 25 Feb 2007 06:20:01 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 21 Jan 2006 00:00:00 GMT	Weekly
 18	Sun, 25 Feb 2007 06:23:40 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 2
+
+-- Anomaly I am guessing means that without permits vehicles are using the zone as evidenced via query attempt 1.
+-- Evolution: I am thinking non-charging days means when the cameras do not take any images.
+-- Hence anomaly means issuance of a daily permit on non-charging or camera off day. hence query attempt 2
