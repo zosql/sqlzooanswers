@@ -195,6 +195,38 @@ SO 02 KSP	1	Monthly
 SO 02 QSP	1	Annual
 SO 02 RSP	1	Annual
 
+-- query attempt 3: the current permits would include those permitted till today's date of 1st Feb 2007. hence changing the fDate > to include = this date. 
+
+select distinct(reg), count(reg), chargeType, fDate
+from
+(
+select reg, date_format(sDate,'%Y-%m-%d')sDate,
+date_format((case chargeType
+when 'Daily' then date_add(sDate, INTERVAL 1 DAY)
+when 'Weekly' then date_add(sDate, INTERVAL 1 WEEK)
+when 'Monthly' then date_add(sDate, INTERVAL 1 MONTH)
+when 'Annual' then date_add(sDate, INTERVAL 1 YEAR)
+else ""
+end
+),'%Y-%m-%d') "fDate", chargeType
+from vehicle v, permit p
+where v.id=p.reg
+) N
+where fDate>='2007-02-01'
+and sDate<='2007-02-01'
+group by reg
+
+-- Result:
+reg	count(reg)	chargeType	fDate
+SO 02 DSP	1	Weekly	2007-02-06
+SO 02 DTP	1	Daily	2007-02-01
+SO 02 JSP	1	Monthly	2007-02-21
+SO 02 KSP	1	Monthly	2007-02-28
+SO 02 KTP	1	Daily	2007-02-01
+SO 02 QSP	1	Annual	2008-01-21
+SO 02 RSP	1	Annual	2008-01-30
+
+
 -- 4.Obtain a list of every vehicle passing camera 10 on 25th Feb 2007. Show the time, the registration and the name of the keeper if available.
 
 select time_format(whn,'%T') time, reg registration, name keeper
@@ -301,14 +333,14 @@ and camera=19
 ) N
 where R=1
 
--- Result:
+-- Result: this is perfect till the end because cam 19 is internal (blank) perim camera
 reg	whn
 SO 02 CSP	Sun, 25 Feb 2007 07:51:10 GMT
 SO 02 DSP	Sun, 25 Feb 2007 16:31:01 GMT
 SO 02 JSP	Sun, 25 Feb 2007 17:14:11 GMT
 SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT
 
--- query attempt 2: cars leaving the zone and datetime
+-- query attempt 2: cars leaving the zone and datetime. Camera at which the vehicle left the zone means the camera must be in the OUT perimeter.
 
 select *
 from
@@ -337,6 +369,40 @@ SO 02 PUP	Sun, 25 Feb 2007 18:36:31 GMT	OUT	1
 SO 02 RSP	Sun, 25 Feb 2007 16:39:10 GMT	OUT	1
 SO 02 SSP	Sun, 25 Feb 2007 16:31:01 GMT	OUT	1
 SO 02 TSP	Mon, 26 Feb 2007 05:13:30 GMT	OUT	1
+
+-- added in a review much later: Result M seems to be a better fit over Keil Org's answer and preferred over Keil Org's answer.
+
+select reg,whn, perim, rank() over(partition by reg order by whn Asc) RL
+from camera, image
+where id=camera
+and perim='OUT'
+
+-- Result:
+reg	whn	perim	RL
+SO 02 ASP	Sun, 25 Feb 2007 06:26:04 GMT	OUT	1
+SO 02 CSP	Sun, 25 Feb 2007 07:04:31 GMT	OUT	1 
+SO 02 CSP	Sun, 25 Feb 2007 07:45:11 GMT	OUT	2
+SO 02 CSP	Sun, 25 Feb 2007 07:58:01 GMT	OUT	3 - this is the ONLY OUT after 7:51 19 cam capture.
+SO 02 DSP	Sun, 25 Feb 2007 18:54:30 GMT	OUT	1 - this is the ONLY out after 18:31 19 cam capture.
+SO 02 ESP	Sun, 25 Feb 2007 18:08:40 GMT	OUT	1
+SO 02 FSP	Sun, 25 Feb 2007 18:08:00 GMT	OUT	1
+SO 02 GSP	Sun, 25 Feb 2007 07:13:00 GMT	OUT	1
+SO 02 GSP	Sun, 25 Feb 2007 18:08:13 GMT	OUT	2
+SO 02 HSP	Sun, 25 Feb 2007 16:45:04 GMT	OUT	1
+SO 02 HSP	Sun, 25 Feb 2007 16:48:11 GMT	OUT	2
+SO 02 HSP	Sun, 25 Feb 2007 16:51:30 GMT	OUT	3
+SO 02 ISP	Sun, 25 Feb 2007 16:58:01 GMT	OUT	1
+SO 02 ISP	Sun, 25 Feb 2007 17:01:13 GMT	OUT	2 -- there is NO OUT record for SO 02 JSP.
+SO 02 MUP	Sun, 25 Feb 2007 18:23:11 GMT	OUT	1
+SO 02 NUP	Sun, 25 Feb 2007 18:26:13 GMT	OUT	1
+SO 02 OUP	Sun, 25 Feb 2007 18:29:01 GMT	OUT	1
+SO 02 PUP	Sun, 25 Feb 2007 18:36:31 GMT	OUT	1
+SO 02 RSP	Sun, 25 Feb 2007 16:39:10 GMT	OUT	1
+SO 02 SSP	Sun, 25 Feb 2007 16:31:01 GMT	OUT	1
+SO 02 TSP	Mon, 26 Feb 2007 05:13:30 GMT	OUT	1 --the ONLY OUT after 25th Feb 7:23 capture by cam 19.
+
+
+-------------------
 
 -- query attempt 3: join 1 & 2
 
@@ -368,17 +434,19 @@ where RL=1
 ) Novo2
 on Novo.reg=Novo2.reg
 
-Result:
+-- Result M: perfect answer
 reg	camera	whn	whn	camera	perim
 SO 02 CSP	19	Sun, 25 Feb 2007 07:51:10 GMT	Sun, 25 Feb 2007 07:58:01 GMT	11	OUT
 SO 02 DSP	19	Sun, 25 Feb 2007 16:31:01 GMT	Sun, 25 Feb 2007 18:54:30 GMT	9	OUT
 SO 02 JSP	19	Sun, 25 Feb 2007 17:14:11 GMT			
 SO 02 TSP	19	Sun, 25 Feb 2007 07:23:00 GMT	Mon, 26 Feb 2007 05:13:30 GMT	10	OUT
 
--- The issue with this result is that the exit is not linked to the entry, 
+-- The issue with this result is that the exit is not linked to the entry -- actually this observation is incorrect because there are no other pairs!
 -- it's basically the first entry and last exit as considered in the query but the exit could have been earlier since there are multiple entries as well
 -- another issue is that camera 19 is neither marked in perim IN or OUT so the assumption that few cameras are at entry (IN) and others at exit (OUT) is debased
+-- discovered in subsequent question that INTERNAL is another type of cams which is cam 19 is internal meaning vehicle is already IN the zone.
 
+-- IGNORE the following attempts since they serve only  need to match Keil Orgs answer :
 -- query attempt 4: there is a need to order and pair entries and exits or more like earliest capture then the next one as a pair.
 
 select reg, whn, camera, w2,c2
@@ -413,7 +481,7 @@ SO 02 TSP	Sun, 25 Feb 2007 07:23:00 GMT	Sun, 25 Feb 2007 07:26:31 GMT	19
 
 -- potential issue identified is that lead function didn't use any partition hence the cam records for other reg also got considered to lead
 
--- query attempt 5: MATCHED!
+-- query attempt 5: MATCHED Keil's answer! However the biggest miss is that we don;t know whether the perim of OUT
 
 select reg, whn, camera, w2,c2
 from
@@ -526,7 +594,7 @@ camera	whn	reg	id	keeper	reg	sDate	chargeType
 18	Sun, 25 Feb 2007 06:23:40 GMT	SO 02 ASP	SO 02 ASP	1	SO 02 ASP	Sat, 2
 
 -- Anomaly I am guessing means that without permits vehicles are using the zone as evidenced via query attempt 1.
--- Evolution: I am thinking non-charging days means when the cameras do not take any images.
+-- Evolution: I am thinking non-charging days means when the cameras do not take any images because the vehicles do not use the zones.
 -- Hence anomaly means issuance of a daily permit on non-charging or camera off day. hence query attempt 2
 
 -- query attempt 2: find charging days from the days when images get taken, find the dates when the daily permits gets issued. 
@@ -616,3 +684,6 @@ where sDate is not NULL
 ) Novo3
 where Status ='Issue_Fine'
 group by name, address, R, camera, ZoneDate
+
+-- 1 keeper might have multiple vehicles.
+-- all camera image capture records are from Feb and none from Jan of either 2006 or 2007.
