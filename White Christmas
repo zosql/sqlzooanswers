@@ -1,0 +1,72 @@
+-- HadCET
+
+-- Days, Months and Years
+
+-- 1.The units are 10th of a degree Celcius. The columns are yr and dy for year and day of month. The next twelve columns are for January through to December.
+-- Show the average daily temperature for August 10th 1964
+
+select round(m8/10,2)
+from hadcet
+where dy=10 and yr=1964
+
+-- Correct answer
+round(m8/10,2)
+13.90
+
+-- preteen Dickens
+
+-- 2.Charles Dickens is said to be responsible for the tradition of expecting snow at Christmas Daily Telegraph. Show the temperature on Christmas day (25th December) for each year of his childhood. He was born in February 1812 - so he was 1 (more or less) in December 1812.
+-- Show the twelve temperatures.
+
+select yr-1811 Age, round(m12/10,2) Temp
+from hadcet
+where dy = 25 and yr between 1812 and 1823
+
+-- Correct answer
+Age	Temp
+1	0.00
+2	8.10
+3	1.10
+4	-0.80
+5	3.00
+6	-0.40
+7	1.00
+8	-0.80
+9	-0.30
+10	3.50
+11	0.50
+12	7.80
+
+-- Minimum Temperature Before Christmas
+
+-- 3.We declare a White Christmas if there was a day with an average temperature below zero between 21st and 25th of December.
+-- For each age 1-12 show which years were a White Christmas. Show 'White Christmas' or 'No snow' for each age.
+
+select Age,
+(case 
+when temp<0 then"White Christmas"
+else "No Snow"
+end
+) What
+from
+(
+select yr-1811 Age, min(m12/10) temp
+from hadcet 
+where dy between 21 and 25 and yr between 1812 and 1823
+group by yr-1811
+) N
+
+-- Correct answer
+Age	What
+1	No Snow
+2	No Snow
+3	White Christmas
+4	White Christmas
+5	White Christmas
+6	White Christmas
+7	White Christmas
+8	White Christmas
+9	White Christmas
+10	No Snow
+11	White Christmas
+12	No Snow
