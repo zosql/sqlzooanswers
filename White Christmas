@@ -184,4 +184,32 @@ yob	wccc
 1812	8
 1813	7
 
--- query attempt 5: joining attempts 3 and 2
+-- query attempt 5: from scratch | neater
+
+select yob, sum(Flag) wcc
+from
+(
+select yob,yr-yob+1, min(m12/10) temp,
+(
+case
+when min(m12/10)<0 then 1
+else null
+end
+) Flag
+from hadcet
+cross join (select distinct(yr) yob from hadcet) N
+where dy between 21 and 25 and m12!=(-999) and yr between yob+2 and yob+11
+group by yr, yob
+order by yob, yr
+) M
+group by yob
+having wcc>6
+
+-- Correct answer
+yob	wcc
+1809	7
+1810	7
+1811	8
+1812	8
+1813	7
+
