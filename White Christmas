@@ -96,3 +96,92 @@ group by yr-1811
 -- Result:
 yr	wcc
 1812	8
+
+-- query attempt 2: modifying the query from previous Q
+
+select count(*)
+from
+(
+select yr,
+(case 
+when temp<0 then"White Christmas"
+else "No Snow"
+end
+) What
+from
+(
+select yr, min(m12/10) temp
+from hadcet 
+where dy between 21 and 25 and yr between 1812+2 and 1823
+group by yr
+) N
+) M
+where What ='White Christmas'
+
+-- Result:
+count(*)
+8
+
+-- query attempt 3 getting YOB!
+
+select distinct(yr) yob
+from hadcet
+
+-- Result:
+yob
+1772
+1773
+1774
+1775
+1776
+1777
+1778
+1779
+1780
+1781
+1782
+1783
+1784
+1785
+1786
+1787
+17 ...
+
+-- query attempt 4: joining attempts 3 and 1
+
+select yob, sum(wcc) wccc
+from
+(
+select yob, Age, sum(Flag) wcc
+from
+(
+select yob, yr-yob+1 Age, min(m12/10) temp,
+(
+case
+when min(m12/10)<0 then 1
+else 0
+end
+) Flag
+from hadcet cross join
+(
+select distinct(yr) yob
+from hadcet
+) M 
+where dy between 21 and 25 and yr between yob+2 and yob+11
+group by yr, yob
+) N
+group by yob, Age
+order by yob, Age Desc
+) O
+group by yob
+having wccc>6
+
+-- Correct answer
+yob	wccc
+1809	7
+1810	7
+1811	8
+1812	8
+1813	7
+
+-- query attempt 5: joining attempts 3 and 2
