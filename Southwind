@@ -181,6 +181,159 @@ February-2002	3515.00
 
 -- Southwind database: hard questions
 
+-- 1.Produce an exceptions list. There are three kinds of exception:
+
+RETURN - a customer returns a product
+INCOMPLETE - a customer is sent an incomplete shipment
+OUTSTANDING - an order has not been shipped
+The exceptions list should show the customer/supplier id and name, the date, the exception code, the product involved and any other details that are available - such as the explanation
+
+-- query attempt 1:
+
+select count(*)
+from tpurcd
+
+-- Result:
+count(*)
+49
+
+-- query attempt 2:
+
+select count(*)
+from tshipd
+
+-- Result:
+count(*)
+43
+
+-- query attempt 3: Get RETURN
+
+Select Cust_ID, Cust_Name, Retn_Dt, "RETURN" as Excptn_Code, Product, Explanation
+from
+(
+select tcust.code Cust_ID, firm Cust_Name, date_format(recv,'%Y-%m-%d') Retn_Dt, "RETURN", dscr Product, expl Explanation
+from tretn
+join tcust on tretn.cust=tcust.code
+join tprod on tretn.prod=tprod.code
+order by Retn_Dt
+) N
+
+-- Result:
+Cust_ID	Cust_Name	Retn_Dt	Excptn_Code	Product	Explanation
+c002	Inconspicuous Inc.	2002-02-01	RETURN	Huntington	Badly contaminated.
+c002	Inconspicuous Inc.	2002-02-01	RETURN	Worthington	The wrong shade of magnolia.
+c005	Assiduous Assoc.	2002-02-15	RETURN	Kensington	Reminiscent of spouse.
+c006	Incongruous Int.	2002-01-28	RETURN	Huntington	Took off all the handles and the things that held the candles.
+c006	Incongruous Int.	2002-02-10	RETURN	Worthington	Sub-space phase adjustment coil burnt out.
+
+-- query attempt 4: Get OUTSTANDING
+
+select N.code Cust_ID, firm Cust_Name, date_format(N.recv,'%Y-%m-%d') Ordr_Dt, OUTSTANDING Excptn_Code, dscr Product, "Order not shipped"
+from
+(
+select tcust.code, firm, tpurcd.recv, "OUTSTANDING", dscr
+from tcust
+join tpurcd on tcust.code=tpurcd.cust
+join tprod  on tpurcd.prod=tprod.code
+left join tshipd on (tshipd.cust=tcust.code and tshipd.prod=tprod.code and tpurcd.recv=tshipd.recv)
+where shpd is NULL
+group by tcust.code, tpurcd.recv, dscr
+) N
+
+-- Result: this includes INCOMPLETE order of 4th Feb for c003 hence we need to write the query at prod ordered and prod shipped for each customer by order date.
+Cust_ID	Cust_Name	Ordr_Dt	Excptn_Code	Product	Order not shi..
+c003	Contiguous Corp.	2002-02-04	OUTSTANDING	Kensington	Order not shipped
+c003	Contiguous Corp.	2002-02-12	OUTSTANDING	Huntington	Order not shipped
+c006	Incongruous Int.	2002-02-20	OUTSTANDING	Arlington	Order not shipped
+c006	Incongruous Int.	2002-02-20	OUTSTANDING	Huntington	Order not shipped
+c006	Incongruous Int.	2002-02-20	OUTSTANDING	Lexington	Order not shipped
+c006	Incongruous Int.	2002-02-20	OUTSTANDING	Wilmington	Order not shipped
+
+-- query attempt 5:
+
+select *,
+(
+case
+when Excptn_Code='INCOMPLETE' then 'Customer is sent an incomplete shipment'
+when Excptn_Code='OUTSTANDING' then 'Order has not been shipped'
+else 'err'
+end
+) Explanation
+from
+(
+select tcust.code Cust_ID, firm Cust_Name, date_format(tpurcd.recv,'%Y-%m-%d') Ordr_Dt, group_concat(dscr order by dscr separator ', ') Products,
+(case
+when count(tshipd.prod)=0 and count(tpurcd.prod)<>0 then "OUTSTANDING"
+when count(tshipd.prod)>0 and count(tpurcd.prod)>count(tshipd.prod) then "INCOMPLETE"
+when count(tpurcd.prod)=count(tshipd.prod) then "COMPLETE"
+else "err"
+end
+) Excptn_Code
+from tcust
+join tpurcd on tcust.code=tpurcd.cust
+join tprod  on tpurcd.prod=tprod.code
+left join tshipd on (tshipd.cust=tcust.code and tshipd.prod=tprod.code and tpurcd.recv=tshipd.recv)
+group by tcust.code, tpurcd.recv
+) N
+where Excptn_Code!='COMPLETE'
+
+-- Result:
+Cust_ID	Cust_Name	Ordr_Dt	Products	Excptn_Code	Explanation
+c003	Contiguous Corp.	2002-02-04	Bennington, Kensington, Wilmington	INCOMPLETE	Customer is sent an incomplete shipment
+c003	Contiguous Corp.	2002-02-12	Huntington	OUTSTANDING	Order has not been shipped
+c006	Incongruous Int.	2002-02-20	Arlington, Huntington, Lexington, Wilmington	OUTSTANDING	Order has not been shipped
+
+-- query attempt 6: merge queries 3 and 5 UNION
+
+Select Cust_ID, Cust_Name, Date, "RETURN" as Excptn_Code, Product_Ordr, Explanation
+from
+(
+select tcust.code Cust_ID, firm Cust_Name, date_format(recv,'%Y-%m-%d') Date, "RETURN", dscr Product_Ordr, expl Explanation
+from tretn
+join tcust on tretn.cust=tcust.code
+join tprod on tretn.prod=tprod.code
+order by Date
+) N
+
+UNION
+
+select *,
+(
+case
+when Excptn_Code='INCOMPLETE' then 'Customer is sent an incomplete shipment'
+when Excptn_Code='OUTSTANDING' then 'Order has not been shipped'
+else 'err'
+end
+) Explanation
+from
+(
+select tcust.code Cust_ID, firm Cust_Name, date_format(tpurcd.recv,'%Y-%m-%d') Ordr_Dt, 
+(case
+when count(tshipd.prod)=0 and count(tpurcd.prod)<>0 then "OUTSTANDING"
+when count(tshipd.prod)>0 and count(tpurcd.prod)>count(tshipd.prod) then "INCOMPLETE"
+when count(tpurcd.prod)=count(tshipd.prod) then "COMPLETE"
+else "err"
+end
+) Excptn_Code, group_concat(dscr order by dscr separator ', ') Products
+from tcust
+join tpurcd on tcust.code=tpurcd.cust
+join tprod  on tpurcd.prod=tprod.code
+left join tshipd on (tshipd.cust=tcust.code and tshipd.prod=tprod.code and tpurcd.recv=tshipd.recv)
+group by tcust.code, tpurcd.recv
+) N
+where Excptn_Code!='COMPLETE'
+
+-- Result:
+Cust_ID	Cust_Name	Date	Excptn_Code	Product_Ordr	Explanation
+c002	Inconspicuous Inc.	2002-02-01	RETURN	Huntington	Badly contaminated.
+c002	Inconspicuous Inc.	2002-02-01	RETURN	Worthington	The wrong shade of magnolia.
+c005	Assiduous Assoc.	2002-02-15	RETURN	Kensington	Reminiscent of spouse.
+c006	Incongruous Int.	2002-01-28	RETURN	Huntington	Took off all the handles and the things that held the candles.
+c006	Incongruous Int.	2002-02-10	RETURN	Worthington	Sub-space phase adjustment coil burnt out.
+c003	Contiguous Corp.	2002-02-04	INCOMPLETE	Bennington, Kensington, Wilmington	Customer is sent an incomplete shipment
+c003	Contiguous Corp.	2002-02-12	OUTSTANDING	Huntington	Order has not been shipped
+c006	Incongruous Int.	2002-02-20	OUTSTANDING	Arlington, Huntington, Lexington, Wilmington	Order has not been shipped
+
 -- 3.Identify the best selling product line for each month. The best selling product is the one with the greatest value of orders.
 
 select Month, dscr
