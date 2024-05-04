@@ -177,3 +177,29 @@ Month	TotalSales
 January-2002	585.00
 February-2002	3515.00
 
+-- Southwind hard
+
+-- Southwind database: hard questions
+
+-- 3.Identify the best selling product line for each month. The best selling product is the one with the greatest value of orders.
+
+select Month, dscr
+from
+(
+select *, rank() over(partition by Month order by TotalSales Desc) R
+from
+(
+select date_format(recv,'%M-%Y') Month, dscr,sum(pric*qnty) TotalSales
+from tprod
+join tpurcd on tprod.code=tpurcd.prod
+group by Month Desc, dscr
+) N
+) M
+where R=1
+order by Month Desc
+
+-- Result:
+Month	dscr
+January-2002	Coddington
+February-2002	Bennington
+
