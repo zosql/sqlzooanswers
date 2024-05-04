@@ -334,6 +334,174 @@ c003	Contiguous Corp.	2002-02-04	INCOMPLETE	Bennington, Kensington, Wilmington	C
 c003	Contiguous Corp.	2002-02-12	OUTSTANDING	Huntington	Order has not been shipped
 c006	Incongruous Int.	2002-02-20	OUTSTANDING	Arlington, Huntington, Lexington, Wilmington	Order has not been shipped
 
+-- 2.For each item, calculate the total number currently in stock based on the most recent stock check and deliveries/shipments since that date. 
+You should assume that customer returned items are put back in stock.
+
+-- query attempt 1: return stock
+
+select prod, date_format(recv,'%Y-%m-%d') Dt, qnty
+from tretn
+
+-- Result:
+prod	Dt	qnty
+p008	2002-02-01	5
+p009	2002-02-01	1
+p001	2002-02-15	1
+p008	2002-01-28	1
+p009	2002-02-10	5
+
+-- query attempt 2: last stock check
+
+select prod, date_format(chck,'%Y-%m-%d') dt, qnty
+from
+(
+select prod, chck, qnty, rank() over(partition by prod order by chck Desc) R
+from tstck
+) Stock_Check
+where R=1
+
+-- Result:
+prod	dt	qnty
+p001	2002-01-10	40
+p002	2002-02-03	40
+p003	2002-01-10	40
+p004	2002-01-10	40
+p005	2002-02-02	30
+p006	2002-01-10	40
+p007	2002-02-02	39
+p008	2002-01-10	40
+p009	2002-01-10	40
+p010	2002-02-02	25
+
+-- query attempt 3: stock chck considering return
+
+select SP, SD, 
+(case
+when RD>SD then SQ+RQ
+else SQ
+end
+) Stck_Ret
+from
+(
+select Stock_Check.prod SP, date_format(chck,'%Y-%m-%d') SD, Stock_Check.qnty SQ, Returns.prod RP, Dt RD, Returns.qnty RQ
+from
+(
+select prod, chck, qnty, rank() over(partition by prod order by chck Desc) R
+from tstck
+) Stock_Check
+left join (select prod, date_format(recv,'%Y-%m-%d') Dt, qnty
+from tretn) Returns 
+on Stock_Check.prod=Returns.prod
+where R=1
+) StockwRet
+
+-- Result: incorrect due to multiple quantities of the same product.
+SP	SD	Stck_Ret
+p008	2002-01-10	45
+p009	2002-01-10	41
+p001	2002-01-10	41
+p008	2002-01-10	41
+p009	2002-01-10	45
+p002	2002-02-03	40
+p003	2002-01-10	40
+p004	2002-01-10	40
+p005	2002-02-02	30
+p006	2002-01-10	40
+p007	2002-02-02	39
+p010	2002-02-02	25
+
+-- query attempt 4: redo the prev attempt
+
+select SP, SD, 
+(case
+when RD>=SD then SQ+sum(RQ)
+else SQ
+end
+) Stck_Ret
+from
+(
+select Stock_Check.prod SP, date_format(chck,'%Y-%m-%d') SD, Stock_Check.qnty SQ, Returns.prod RP, Dt RD, Returns.qnty RQ
+from
+(
+select prod, chck, qnty, rank() over(partition by prod order by chck Desc) R
+from tstck
+) Stock_Check
+left join (select prod, date_format(recv,'%Y-%m-%d') Dt, qnty
+from tretn) Returns 
+on Stock_Check.prod=Returns.prod
+where R=1
+) StockwRet
+group by SP
+
+-- Result:
+SP	SD	Stck_Ret
+p001	2002-01-10	41
+p002	2002-02-03	40
+p003	2002-01-10	40
+p004	2002-01-10	40
+p005	2002-02-02	30
+p006	2002-01-10	40
+p007	2002-02-02	39
+p008	2002-01-10	46
+p009	2002-01-10	46
+p010	2002-02-02	25
+
+-- query attempt 5: shipped products count
+
+select prod, date_format(shpd,'%Y-%m-%d') Shpdt, qnty
+from tshipd
+order by prod, Shpdt Desc
+
+-- Result:
+prod	Shpdt	qnty
+p001	2002-02-18	5
+p001	2002-02-13	1
+p001	2002-02-13	5
+p001	2002-02-11	5
+p003	2002-02-18	4
+p003	2002-02-13	4
+p003	2002-02-09	5
+p003	2002-02-05	3
+p004	2002-02-18	1
+p004	2002-02-18	3
+p004	2002-02-17	1
+p004	2002-02-12	5
+p004	2002-02-10	1
+p004	2002-02-07	5
+p005	2002-02-18	3
+p005	2002-02-18	5
+p005	2002-02-13	3
+p005	2002-02-09	2
+p005	2002-02-05	4
+p005	2002-01-28	3
+p005	2002-01-27	1
+p006	2002-02-18	5
+p006	2002-02-17	2
+p006	2002-02-12	5
+p006	2002-02-11	1
+p006	2002-02-10	5
+p006	2002-02-03	1
+p007	2002-02-18	5
+p007	2002-02-10	2
+p007	2002-02-03	1
+p007	2002-01-28	1
+p008	2002-02-18	5
+p008	2002-02-13	3
+p008	2002-02-13	5
+p008	2002-02-12	4
+p008	2002-02-07	5
+p008	2002-02-03	3
+p008	2002-01-31	5
+p008	2002-01-27	2
+p010	2002-02-18	4
+p010	2002-02-07	4
+p010	2002-02-03	4
+p010	2002-01-27	15
+
+-- query attempt 6: combo of 4 and 5 logic of subtract if after or on date of Lstockcheck else stock as is
+
+
+
 -- 3.Identify the best selling product line for each month. The best selling product is the one with the greatest value of orders.
 
 select Month, dscr
