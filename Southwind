@@ -1,0 +1,67 @@
+-- Southwind
+
+-- Southwind database
+
+-- 1.The table tpurcd gives details of all products ordered. This table gives details of all purchase orders.
+
+SELECT *
+  FROM tcust
+  JOIN tpurcd ON (tcust.code=tpurcd.cust)
+  JOIN tprod  ON (tpurcd.prod=tprod.code)
+
+-- 2.Some of the tables are joined by a composite foreign key. For example to link shipment details to a shipment record we must join on (cust,shpd).
+
+SELECT addr, tship.shpd, prod
+   FROM tship JOIN tshipd
+     ON(tshipd.cust=tship.cust AND
+        tshipd.shpd=tship.shpd)
+ WHERE tship.addr IS NOT NULL
+
+-- Southwind easy
+
+-- Southwind database: easy questions
+
+-- 1.List all the products ordered by customer c006. Include the description of the product, the date that the order was received and the number ordered.
+
+select tprod.code, dscr,recv, qnty
+from tprod
+join tpurcd on tpurcd.prod=tprod.code
+join tcust on tcust.code=tpurcd.cust
+where tcust.code='c006'
+order by tprod.code, recv Asc
+
+-- Result:
+code	dscr	recv	qnty
+p003	Bennington	Fri, 08 Feb 2002 00:00:00 GMT	5
+p004	Lexington	Sat, 16 Feb 2002 00:00:00 GMT	1
+p004	Lexington	Wed, 20 Feb 2002 00:00:00 GMT	4
+p005	Wilmington	Sat, 26 Jan 2002 00:00:00 GMT	1
+p005	Wilmington	Fri, 08 Feb 2002 00:00:00 GMT	2
+p005	Wilmington	Wed, 20 Feb 2002 00:00:00 GMT	4
+p006	Farmington	Sat, 16 Feb 2002 00:00:00 GMT	2
+p007	Arlington	Wed, 20 Feb 2002 00:00:00 GMT	5
+p008	Huntington	Sat, 26 Jan 2002 00:00:00 GMT	2
+p008	Huntington	Wed, 20 Feb 2002 00:00:00 GMT	4
+p010	Coddington	Sat, 26 Jan 2002 00:00:00 GMT	15
+
+-- 2.For each product show the total number ordered. Include just the product code and the number ordered
+
+select tprod.code, coalesce(sum(qnty),0)
+from tprod
+left join tpurcd on tpurcd.prod=tprod.code
+group by tprod.code
+order by tprod.code
+
+-- Result:
+code	coalesce(sum(..
+p001	21
+p002	0
+p003	16
+p004	20
+p005	25
+p006	19
+p007	14
+p008	37
+p009	0
+p010	27
+
