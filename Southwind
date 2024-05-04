@@ -65,3 +65,115 @@ p008	37
 p009	0
 p010	27
 
+-- 3.Give the firm and the address of each company that placed an order on 12th February 2007.
+
+select distinct(firm), addr
+from tpurcd
+join tcust on tcust.code=tpurcd.cust
+where date_format(recv, '%Y-%m-%d') = '2002-02-12'
+
+-- Result:
+firm	addr
+Inconspicuous Inc.	Interception Rd.
+Contiguous Corp.	Circumscription Close
+Assiduous Assoc.	Attribution Alley
+
+-- 4.Give all details of the order made by customer 'Assiduous Assoc.' on 12th February 2007. Include the product code, the description the price and the number ordered.
+
+select prod, dscr, pric, qnty
+from tpurcd
+join tcust on tcust.code=tpurcd.cust
+join tprod on tprod.code=tpurcd.prod
+where date_format(recv, '%Y-%m-%d') = '2002-02-12' and firm = 'Assiduous Assoc.' 
+
+-- Result:
+prod	dscr	pric	qnty
+p001	Kensington	20.00	1
+p008	Huntington	30.00	5
+
+-- 5.Find the total number of 'Wilmington' ordered by 'Contiguous Corp.'.
+
+select sum(qnty)
+from tpurcd
+join tcust on tcust.code=tpurcd.cust
+join tprod on tprod.code=tpurcd.prod
+where dscr='Wilmington' and firm = 'Contiguous Corp.' 
+
+-- Result:
+sum(qnty)
+10
+
+-- Southwind medium
+
+-- Southwind database: medium questions
+
+-- 1.Give the name of the firm or firms who have placed no orders.
+
+select firm
+from tcust
+left join tpurcd on tpurcd.cust=tcust.code
+where cust is NULL
+
+-- Result:
+firm
+Strenuous Systems
+
+-- 2.Create a list of products. For each product show the description and the total number ordered and the date of the most recent order.
+
+select dscr, coalesce(sum(qnty),0) TNO, coalesce(max(recv), 'No orders') RecentOrdrDate
+from tprod
+left join tpurcd on tpurcd.prod=tprod.code
+group by dscr
+
+-- Result:
+dscr	TNO	RecentOrdrDate
+Arlington	14	2002-02-20
+Barrington	0	No orders
+Bennington	16	2002-02-17
+Coddington	27	2002-02-17
+Farmington	19	2002-02-17
+Huntington	37	2002-02-20
+Kensington	21	2002-02-17
+Lexington	20	2002-02-20
+Wilmington	25	2002-02-20
+Worthington	0	No orders
+
+-- 3.Show the customer code, the received date and the total value of all purchase orders with a total value of at least £475.
+
+select tcust.code, recv, sum(qnty*pric) TV
+from tcust
+join tpurcd on tpurcd.cust=tcust.code
+join tprod on tpurcd.prod=tprod.code
+group by tcust.code, recv
+having TV>=475
+
+-- Result:
+code	recv	TV
+c002	Tue, 12 Feb 2002 00:00:00 GMT	475.00
+c003	Sun, 17 Feb 2002 00:00:00 GMT	565.00
+
+-- 4.List all shipments for the first week of February (2007-02-01 to 2007-02-07 inclusive). For each shipment show: the customer, the date of the shipment and the address. The address is the customer address as in tcust unless specified in tship
+
+select firm Customer, date_format(shpd,'%Y-%m-%d') Shpmnt_Date, if(s.addr is not NULL, s.addr, c.addr) Address
+from tship s
+join tcust c on c.code=s.cust
+where date_format(shpd,'%Y-%m-%d') between '2002-02-01' and '2002-02-07'
+
+-- Result:
+Customer	Shpmnt_Date	Address
+Contiguous Corp.	2002-02-03	Circumscription Close
+Contiguous Corp.	2002-02-05	Circumscription Close
+Assiduous Assoc.	2002-02-07	Diminution Drive
+
+-- 5.Show the total sales by month.
+
+select date_format(recv,'%M-%Y') Month, sum(pric*qnty) TotalSales
+from tprod
+join tpurcd on tprod.code=tpurcd.prod
+group by Month Desc
+
+-- Result:
+Month	TotalSales
+January-2002	585.00
+February-2002	3515.00
+
