@@ -500,7 +500,89 @@ p010	2002-01-27	15
 
 -- query attempt 6: combo of 4 and 5 logic of subtract if after or on date of Lstockcheck else stock as is
 
+-- didnt copy this query and result
 
+-- query attempt 7: delivered stock to be ADDED ?? (KeilOrg added) since subtracion is causing negative stocks
+
+select prod, date_format(recv, '%Y-%m-%d'), qnty
+from tdlvrd
+order by prod
+
+-- Result:
+prod	date_format(r..	qnty
+p002	2002-02-15	20
+p005	2002-02-14	10
+p005	2002-02-15	-10
+p005	2002-02-19	10
+p005	2002-02-16	5
+p006	2002-02-15	50
+p007	2002-02-16	40
+p008	2002-02-15	20
+
+-- query attempt 8: 6 left join 7
+
+select SP, AftrShp+
+sum(
+case
+when DD>=SD then qnty
+else ""
+end
+) FinStck
+from
+(select SD,SP,Stck_Ret+
+sum(
+case
+when Shpdt>=SD then qnty*(-1)
+else ""
+end
+) AftrShp
+from
+(
+select SP, SD, 
+(case
+when RD>=SD then SQ+sum(RQ)
+else SQ
+end
+) Stck_Ret
+from
+(
+select Stock_Check.prod SP, date_format(chck,'%Y-%m-%d') SD, Stock_Check.qnty SQ, Returns.prod RP, Dt RD, Returns.qnty RQ
+from
+(
+select prod, chck, qnty, rank() over(partition by prod order by chck Desc) R
+from tstck
+) Stock_Check
+left join (select prod, date_format(recv,'%Y-%m-%d') Dt, qnty
+from tretn) Returns 
+on Stock_Check.prod=Returns.prod
+where R=1
+) StockwRet
+group by SP
+) SRET
+left join (select prod, date_format(shpd,'%Y-%m-%d') Shpdt, qnty
+from tshipd
+order by prod, Shpdt Desc) SHPD 
+on SHPD.prod=SRET.SP
+group by SP
+order by SP) M
+left join (select prod, date_format(recv, '%Y-%m-%d') DD, qnty
+from tdlvrd order by prod) DLVR
+on M.SP=DLVR.prod
+group by SP
+order by SP
+
+-- Result: matches Keil org's answer and also checked manually however unsure why dlvrd needs to be added.
+SP	FinStck
+p001	25
+p002	60
+p003	24
+p004	24
+p005	28
+p006	71
+p007	71
+p008	34
+p009	46
+p010	13
 
 -- 3.Identify the best selling product line for each month. The best selling product is the one with the greatest value of orders.
 
