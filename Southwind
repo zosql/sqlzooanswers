@@ -759,7 +759,7 @@ week
 2002-02-22
 2002-03-01
 
--- query attempt 5: return capital value day by day!
+-- query attempt 5: return capital stock value day by day!
 
 select date, sum(qnty*pric) Ret_CP
 from
@@ -818,11 +818,20 @@ date	Ret_CP
 -- this is the same logic as was applied for Q2 for calculatin final stock
 -- TCSV is juts multiplying it with the value of the products that day with their per product price
 -- this is unlike keilOrg who took "purchases" or sales as total capital stock value which does not make sense.
+-- In business terms those are bookings but not the total value of the inventory, IP, etc.
+
+-- query attempt 6: stock capital value day by day!
+-- in practice however, you cannot work with the stock inventory day by day since it's fixed for that day and daily inventory is not done.
+-- hence stock capital is like starting inventory, from which to subtract shipped and add returns and supplies.
+
+-- it's hard to think through, will come back to it later
 
 -- 5.Obtain a list of discrepancies in the stock levels
 
--- Starting with the assumption that this means the inventory or stock level was counted wrongly when it was actually counted.
+-- Starting with the assumption that this means the inventory or stock level was counted wrongly when it was counted.
 -- This is different from Q2 where the idea was to count everything till date: ie last stock chk + returned - shipped + deliveries from supplier
 -- The assumption of the Q2 was that the last stock check was correct for each product, however now it is to doubt or question that!
 
 -- Keil org is using sales data to find stock discrepancy which seems like a mistake since receipt of orders does not affect stocks!
+
+-- it's hard to think through, will come back to it later
