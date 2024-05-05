@@ -571,7 +571,7 @@ on M.SP=DLVR.prod
 group by SP
 order by SP
 
--- Result: matches Keil org's answer and also checked manually however unsure why dlvrd needs to be added.
+-- Result: matches Keil org's answer and also checked manually however unsure why dlvrd needs to be added. but strongly correct.
 SP	FinStck
 p001	25
 p002	60
@@ -583,6 +583,12 @@ p007	71
 p008	34
 p009	46
 p010	13
+
+-- the core issue is that there is no ERD attached to the Q hence the confusion of it all.
+-- it's figured out as delivery is from supplier to the stock and then onwards to the customer and not directly to the customer.
+-- the stocks would be negative if delivery qnty was to be subtracted from stock with return and shipped.
+-- this also makes sense since the Supplier is not linked with any customer which would be the case if the supplier were to deliver to the customer directly.
+-- The hard question 1 also states to show either the supplier or the customer code for shipment issues not both ie lets users decide.
 
 -- 3.Identify the best selling product line for each month. The best selling product is the one with the greatest value of orders.
 
@@ -606,3 +612,217 @@ Month	dscr
 January-2002	Coddington
 February-2002	Bennington
 
+-- 4.Produce a bar chart showing the total capital value of the stock week by week for the 8 weeks from 11th January to 1st March 2007. 
+The bar chart may have horizontal bars made of characters
+
+-- First i have to learn to create weeks in rows.
+
+-- query attempt 1: weeks!
+
+select *, date_add('2002-01-11', Interval (week-1) WEEK) strt_dy
+from
+(
+SELECT 1 AS week 
+UNION SELECT 2 
+UNION SELECT 3
+UNION SELECT 4
+UNION SELECT 5
+UNION SELECT 6
+UNION SELECT 7
+UNION SELECT 8
+) weeks
+
+-- Result:
+week	strt_dy
+1	2002-01-11
+2	2002-01-18
+3	2002-01-25
+4	2002-02-01
+5	2002-02-08
+6	2002-02-15
+7	2002-02-22
+8	2002-03-01
+
+-- query attempt 2: TCV
+
+select *, FinStck*pric TCV
+from
+(
+select SP, AftrShp+
+sum(
+case
+when DD>=SD then qnty
+else ""
+end
+) FinStck
+from
+(select SD,SP,Stck_Ret+
+sum(
+case
+when Shpdt>=SD then qnty*(-1)
+else ""
+end
+) AftrShp
+from
+(
+select SP, SD, 
+(case
+when RD>=SD then SQ+sum(RQ)
+else SQ
+end
+) Stck_Ret
+from
+(
+select Stock_Check.prod SP, date_format(chck,'%Y-%m-%d') SD, Stock_Check.qnty SQ, Returns.prod RP, Dt RD, Returns.qnty RQ
+from
+(
+select prod, chck, qnty, rank() over(partition by prod order by chck Desc) R
+from tstck
+) Stock_Check
+left join (select prod, date_format(recv,'%Y-%m-%d') Dt, qnty
+from tretn) Returns 
+on Stock_Check.prod=Returns.prod
+where R=1
+) StockwRet
+group by SP
+) SRET
+left join (select prod, date_format(shpd,'%Y-%m-%d') Shpdt, qnty
+from tshipd
+order by prod, Shpdt Desc) SHPD 
+on SHPD.prod=SRET.SP
+group by SP
+order by SP) M
+left join (select prod, date_format(recv, '%Y-%m-%d') DD, qnty
+from tdlvrd order by prod) DLVR
+on M.SP=DLVR.prod
+group by SP
+order by SP
+) Q
+join tprod on tprod.code=Q.SP
+
+-- Result: however now need to find the TCV variation every week.
+SP	FinStck	code	dscr	pric	TCV
+p001	25	p001	Kensington	20.00	500
+p002	60	p002	Barrington	80.00	4800
+p003	24	p003	Bennington	60.00	1440
+p004	24	p004	Lexington	10.00	240
+p005	28	p005	Wilmington	15.00	420
+p006	71	p006	Farmington	15.00	1065
+p007	71	p007	Arlington	15.00	1065
+p008	34	p008	Huntington	30.00	1020
+p009	46	p009	Worthington	30.00	1380
+p010	13	p010	Coddington	20.00	260
+
+-- query attempt 3: day by day date generation: learnt recursion!
+
+with recursive dates as
+(
+select '2002-01-11' date
+UNION ALL
+select date_add(date, Interval 1 Day)
+from dates
+where date<'2002-03-02'
+)
+select *
+from dates
+where date<'2002-03-02'
+
+-- Result:
+date
+2002-01-11
+2002-01-12
+2002-01-13
+2002-01-14
+2002-01 ...
+
+-- query attempt 4: repeating query attempt 1 with recursive
+
+with recursive Weeks as
+(
+select '2002-01-11' week
+UNION ALL
+select date_add(week, Interval 1 week)
+from Weeks
+where week<'2002-03-01'
+)
+Select *
+from Weeks
+
+-- Result:
+week
+2002-01-11
+2002-01-18
+2002-01-25
+2002-02-01
+2002-02-08
+2002-02-15
+2002-02-22
+2002-03-01
+
+-- query attempt 5: return capital value day by day!
+
+select date, sum(qnty*pric) Ret_CP
+from
+(
+select date, prod, qnty
+from
+(
+with recursive dates as
+(
+select '2002-01-11' date
+UNION ALL
+select date_add(date, Interval 1 Day)
+from dates
+where date<'2002-03-02'
+)
+select *
+from dates
+where date<'2002-03-02'
+) Dates
+left join tretn on tretn.recv=Dates.date
+)Ret_Q
+left join tprod on tprod.code=Ret_Q.prod
+group by date
+
+-- Result:
+date	Ret_CP
+2002-01-11	
+2002-01-12	
+2002-01-13	
+2002-01-14	
+2002-01-15	
+2002-01-16	
+2002-01-17	
+2002-01-18	
+2002-01-19	
+2002-01-20	
+2002-01-21	
+2002-01-22	
+2002-01-23	
+2002-01-24	
+2002-01-25	
+2002-01-26	
+2002-01-27	
+2002-01-28	30.00
+2002-01-29	
+2002-01-30	
+2002-01-31	
+2002-02-01	180.00
+2002-02-02	
+2002-02-03	
+
+-- we will work with the assumption that return stock value adds to the capital stock value
+-- what's already in the stock is capital stock value base
+-- shipped queries are decreases in TCSV
+-- expected deliveries from suppliers adds to the TCV
+-- this is the same logic as was applied for Q2 for calculatin final stock
+-- TCSV is juts multiplying it with the value of the products that day with their per product price
+-- this is unlike keilOrg who took "purchases" or sales as total capital stock value which does not make sense.
+
+-- 5.Obtain a list of discrepancies in the stock levels
+
+-- Starting with the assumption that this means the inventory or stock level was counted wrongly when it was actually counted.
+-- This is different from Q2 where the idea was to count everything till date: ie last stock chk + returned - shipped + deliveries from supplier
+-- The assumption of the Q2 was that the last stock check was correct for each product, however now it is to doubt or question that!
+
+-- Keil org is using sales data to find stock discrepancy which seems like a mistake since receipt of orders does not affect stocks!
