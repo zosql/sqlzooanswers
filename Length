@@ -1,0 +1,60 @@
+-- LENGTH(s) returns the number of characters in string s.
+-- LENGTH('Hello') -> 5 
+
+-- 1.
+SELECT LENGTH(name), name
+  FROM bbc
+
+-- Result:
+LENGTH(name)	name
+6	Angola
+5	Benin
+8	Botswana
+12	Burkina Faso
+7	Burundi
+8	Cameroon
+10	Cape Verde
+24	Central African Republic
+4	Chad
+7	Comoros
+28	Democratic Republic of Congo
+8	Djibouti
+17	Equatorial Guinea
+7	Eritrea
+8	Ethiopia
+5	Gabon
+5	Ghana
+6	Guinea
+13	Guinea-Bissau
+11	Ivory Coast
+5	Kenya
+7	Lesotho
+7	Liberia
+5	Libya
+10	Madagascar
+6	Malawi
+4	Mali
+9	Mauritius
+10	Mozambique
+7	Namibia
+5	Niger
+7	Nigeria
+17	Republic of Congo
+6	Rwanda
+21	Sao Tome and Principe
+7	Senegal
+10	Seychelles
+12	Sierra Leone
+7	Somalia
+12	South Africa
+9	Swaziland
+8	Tanzania
+10	The Gambia
+4	Togo
+6	Uganda
+6	Zambia
+8	Zimbabwe
+19	Antigua and Barbuda
+7	Bahamas
+8	Barbados
+Results truncated. Only the first 50 rows have been shown.
