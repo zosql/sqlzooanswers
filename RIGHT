@@ -1,0 +1,16 @@
+-- RIGHT(s,n) allows you to extract n characters from the end of the string s.
+-- RIGHT('Hello world', 4) -> 'orld'
+
+-- 1.
+SELECT name,
+       RIGHT(name, 3)
+  FROM bbc
+
+-- Result:
+name	RIGHT(name, 3)
+Angola	ola
+Benin	nin
+Botswana	ana
+Burkina Faso	aso
+Burundi	ndi
+Cameroon	oon
