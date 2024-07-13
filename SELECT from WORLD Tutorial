@@ -119,6 +119,18 @@ WHERE gdp > 1000000000000
 SELECT name, capital  FROM world
  WHERE length(name ) = length(capital)
 
+-- CAPS
+
+SELECT name, capital
+FROM world
+WHERE LENGTH(name) = LENGTH(capital)
+
+-- Correct answer
+name	capital
+Algeria	Algiers
+Angola	Luanda
+Armenia	Yerevan ...
+
 --Matching name and capital
 --12.The capital of Sweden is Stockholm. Both words start with the letter 'S'.
 --Show the name and the capital where the first letters of each match. Don't include countries where the name and the capital are the same word.
