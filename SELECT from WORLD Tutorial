@@ -9,11 +9,21 @@ SELECT name, continent, population FROM world
 select name from world
 where population >=200000000
 
+-- Using CAPS
+SELECT name 
+FROM world
+WHERE population >= 200000000
+
 --Per capita GDP
 --3. Give the name and the per capita GDP for those countries with a population of at least 200 million.
 
 select name, gdp/population as "per capita GDP" from world
 where population >=200000000
+
+-- Using CAPS
+SELECT name, gdp/population AS "per capita GDP" 
+FROM world
+WHERE population >= 200000000
 
 --South America In millions
 --4. Show the name and population in millions for the countries of the continent 'South America'. Divide the population by 1000000 to get population in millions.
@@ -21,11 +31,21 @@ where population >=200000000
 select name, population/1000000 from world
 where continent = 'South America'
 
+-- CAPS
+SELECT name, population/1000000 as 'Population (in mil)'
+FROM world
+WHERE continent = 'South America'
+
 --France, Germany, Italy
 --5.Show the name and population for France, Germany, Italy
 
 select name, population from world
 where name IN ('France', 'Germany','Italy')
+
+-- CAPS
+SELECT name, population 
+FROM world
+WHERE name IN ('France','Germany','Italy')
 
 --United
 --6.Show the countries which have a name that includes the word 'United'
@@ -33,12 +53,23 @@ where name IN ('France', 'Germany','Italy')
 select name from world
 where name LIKE "United%"
 
+-- CAPS
+SELECT name
+FROM world
+WHERE name LIKE '%United%'
+
 --Two ways to be big
 --7.Two ways to be big: A country is big if it has an area of more than 3 million sq km or it has a population of more than 250 million.
 --Show the countries that are big by area or big by population. Show name, population and area.
 
 select name, population, area from world
 where population > 250000000 OR area > 3000000
+
+-- CAPS
+SELECT name, population, area
+FROM world
+WHERE population > 250000000 OR
+area > 3000000
 
 --One or the other (but not both)
 --8.Exclusive OR (XOR). Show the countries that are big by area (more than 3 million) or big by population (more than 250 million) but not both. Show name, population and area.
@@ -50,6 +81,12 @@ where population > 250000000 OR area > 3000000
 select name, population, area from world
 where area > 3000000 XOR population >250000000
 
+-- CAPS
+SELECT name, population, area
+FROM world
+WHERE population > 250000000 XOR
+area > 3000000
+
 --Rounding
 --9.Show the name and population in millions and the GDP in billions for the countries of the continent 'South America'. Use the ROUND function to show the values to two decimal places.
 --For Americas show population in millions and GDP in billions both to 2 decimal places.
@@ -57,12 +94,22 @@ where area > 3000000 XOR population >250000000
 select name, round(population/1000000,2), round(gdp/1000000000,2) from world
 where continent = 'South America'
 
+-- CAPS
+SELECT name, ROUND(population/1000000, 2) as 'Popultn in mil', ROUND(gdp/1000000000, 2) as 'GDP in bil'
+FROM world
+WHERE continent = 'South America'
+
 --Trillion dollar economies
 --10.Show the name and per-capita GDP for those countries with a GDP of at least one trillion (1000000000000; that is 12 zeros). Round this value to the nearest 1000.
 --Show per-capita GDP for the trillion dollar countries to the nearest $1000.
 
 select name, round(gdp/population,-3) from world
 where gdp >1000000000000
+
+- CAPS
+SELECT name, ROUND(gdp/population, -3) AS 'Per-capita GDP'
+FROM world
+WHERE gdp > 1000000000000
 
 --Name and capital have the same length
 --11.Greece has capital Athens.
