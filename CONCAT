@@ -1,0 +1,19 @@
+-- CONCAT allows you to stick two or more strings together.
+-- This operation is concatenation.
+-- CONCAT(s1, s2 ...)   
+
+-- 1.In this example you put the region and the name together for each country.
+
+SELECT CONCAT(region,name)
+  FROM BBC
+
+-- Result:
+CONCAT(region..
+AfricaAngola
+AfricaBenin
+AfricaBotswana
+AfricaBurkina Faso
+AfricaBurundi
+AfricaCameroon
+AfricaCape Verde
+AfricaCentral Afr
