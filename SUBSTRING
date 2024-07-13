@@ -1,0 +1,21 @@
+-- SUBSTRING allows you to extract part of a string.
+-- SUBSTRING('Hello world', 2, 3) -> 'ell'
+
+-- 1.In this example you get the 2nd character onwards from each country's name for upto 5 characters.
+
+SELECT name,
+       SUBSTRING(name, 2, 5)
+  FROM bbc
+
+-- Result:
+name	SUBSTRING(nam..
+Angola	ngola
+Benin	enin
+Botswana	otswa
+Burkina Faso	urkin
+Burundi	urund
+Cameroon	amero
+Cape Verde	ape V -- space gets counted as a character
+Central African Republic	entra
+Chad	had -- if less than the specified char count only what's stored is output
+Comoros	omoro
