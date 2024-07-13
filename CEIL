@@ -1,0 +1,16 @@
+-- CEIL(f) is ceiling, it returns the integer that is equal to or just more than f
+-- CEIL(f) give the integer that is equal to, or just higher than f. CEIL always rounds up.
+-- CEIL(2.7)  ->  3
+-- CEIL(-2.7) -> -2
+
+-- 1.In this example we calculate the population in millions.
+
+SELECT population/1000000 AS ACTUAL,
+       CEIL(population/1000000) AS CEIL,
+       FLOOR (population/1000000) AS FLOOR
+  FROM world
+  WHERE name = 'China'
+
+-- Result:
+ACTUAL	CEIL	FLOOR
+1411.7500	1412	1411
