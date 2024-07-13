@@ -1,0 +1,5 @@
+-- 1.In this example we calculate the population in millions to one decimial place.
+
+SELECT name, gdp/population, ROUND(gdp/population), ROUND(gdp/population, 1), ROUND(gdp/population, 2), ROUND(gdp/population, -1), ROUND(gdp/population, -2)
+FROM world
+WHERE name = 'China'
