@@ -1,0 +1,15 @@
+-- TRIM(s) returns the string with leading and trailing spaces removed.
+-- TRIM('Hello world  ') -> 'Hello world'
+
+-- 1.This function is particularly useful when working with CHAR fields. Typically a CHAR field is paddded with spaces. In contrast a VARCHAR field does not require padding.
+
+SELECT name,
+       TRIM(name)
+  FROM bbc
+
+-- Result:
+name	TRIM(name)
+Angola	Angola
+Benin	Benin
+Botswana	Botswana
+Burkina Faso	Burkina Faso ...
